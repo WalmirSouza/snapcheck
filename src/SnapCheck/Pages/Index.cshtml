@@ -1,0 +1,382 @@
+@page
+@model SnapCheck.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "SnapCheck";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SnapCheck — Painel de Controle</title>
+    <style>
+        :root {
+            --bg: #0f1419;
+            --surface: #1a2332;
+            --border: #2d3a4f;
+            --text: #e7ecf3;
+            --muted: #8b9cb3;
+            --accent: #3b82f6;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .header h1 { font-size: 1.5rem; font-weight: 600; }
+        .header p { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @@media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; padding: 1rem; }
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .panel h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .field { margin-bottom: 1rem; }
+
+        .field label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .field input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .actions-label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1.25rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.15s;
+        }
+
+        .btn:active:not(:disabled) { transform: scale(0.98); }
+        .btn:hover:not(:disabled) { opacity: 0.92; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        @@media (max-width: 768px) {
+            .btn-row { grid-template-columns: 1fr; }
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .status-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.85rem;
+        }
+
+        .status-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .status-card .value { font-size: 1.1rem; font-weight: 600; margin-top: 0.25rem; }
+
+        .online { color: var(--success); }
+        .offline { color: var(--danger); }
+        .connected { color: var(--success); }
+        .disconnected { color: var(--danger); }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .stat-item {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+        }
+
+        .stat-item .number { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .stat-item .desc { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+
+        .log-list {
+            max-height: 220px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            font-family: Consolas, monospace;
+        }
+
+        .log-entry {
+            padding: 0.4rem 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .log-entry.error { color: var(--danger); }
+        .log-entry.warn { color: var(--warning); }
+        .log-entry .time { color: var(--muted); margin-right: 0.5rem; }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            padding: 0.85rem 1.25rem;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            display: none;
+            z-index: 100;
+        }
+
+        .toast.show { display: block; animation: fadeIn 0.2s; }
+        @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>📸 SnapCheck</h1>
+        <p>Controle de presença por foto via Telegram</p>
+    </header>
+
+    <main class="container">
+        <section class="panel">
+            <h2>Configuração</h2>
+            <div class="field">
+                <label for="telegramToken">Token do Bot do Telegram</label>
+                <input type="password" id="telegramToken" placeholder="123456:ABC-DEF..." autocomplete="off" />
+            </div>
+            <div class="field">
+                <label for="connectionString">Connection String do PostgreSQL</label>
+                <input type="text" id="connectionString" placeholder="Host=localhost;Port=5432;Database=snapcheck;..." />
+            </div>
+
+            <div class="actions">
+                <span class="actions-label">Ações</span>
+                <button type="button" id="btnSalvar" class="btn btn-primary">💾 Salvar Configurações</button>
+                <div class="btn-row">
+                    <button type="button" id="btnIniciar" class="btn btn-success">▶ Iniciar Bot</button>
+                    <button type="button" id="btnParar" class="btn btn-danger">⏹ Parar Bot</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Status</h2>
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="label">Bot</div>
+                    <div class="value" id="botStatus">—</div>
+                </div>
+                <div class="status-card">
+                    <div class="label">Banco de Dados</div>
+                    <div class="value" id="dbStatus">—</div>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="number" id="totalPessoas">0</div>
+                    <div class="desc">Pessoas cadastradas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="presencasHoje">0</div>
+                    <div class="desc">Presenças hoje</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="fotosHoje">0</div>
+                    <div class="desc">Fotos processadas hoje</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="mensagensProcessadas">0</div>
+                    <div class="desc">Mensagens processadas</div>
+                </div>
+            </div>
+
+            <div class="status-card" style="margin-bottom: 1rem;">
+                <div class="label">Última atividade</div>
+                <div class="value" id="ultimaAtividade" style="font-size: 0.95rem;">—</div>
+            </div>
+
+            <h2 style="font-size: 0.95rem; margin-bottom: 0.75rem; border: none; padding: 0;">Log de atividades</h2>
+            <div class="log-list" id="logList"></div>
+        </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const toast = document.getElementById('toast');
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        const btnSalvar = document.getElementById('btnSalvar');
+        const btnIniciar = document.getElementById('btnIniciar');
+        const btnParar = document.getElementById('btnParar');
+
+        function setBotoesEstado(botOnline) {
+            btnIniciar.disabled = botOnline;
+            btnParar.disabled = !botOnline;
+        }
+
+        async function atualizarStatus() {
+            try {
+                const res = await fetch('/api/bot/status');
+                const data = await res.json();
+
+                document.getElementById('botStatus').textContent = data.botOnline ? 'Online' : 'Offline';
+                document.getElementById('botStatus').className = 'value ' + (data.botOnline ? 'online' : 'offline');
+
+                document.getElementById('dbStatus').textContent = data.bancoConectado ? 'Conectado' : 'Desconectado';
+                document.getElementById('dbStatus').className = 'value ' + (data.bancoConectado ? 'connected' : 'disconnected');
+
+                setBotoesEstado(data.botOnline);
+
+                document.getElementById('totalPessoas').textContent = data.totalPessoas;
+                document.getElementById('presencasHoje').textContent = data.presencasHoje;
+                document.getElementById('fotosHoje').textContent = data.fotosProcessadasHoje;
+                document.getElementById('mensagensProcessadas').textContent = data.mensagensProcessadas;
+                document.getElementById('ultimaAtividade').textContent = data.ultimaAtividade || '—';
+
+                const logList = document.getElementById('logList');
+                logList.innerHTML = data.logs.length === 0
+                    ? '<div class="log-entry">Nenhuma atividade registrada.</div>'
+                    : data.logs.map(l => `<div class="log-entry ${l.nivel}"><span class="time">${l.timestamp}</span>${l.mensagem}</div>`).join('');
+            } catch (e) {
+                console.error('Erro ao atualizar status:', e);
+            }
+        }
+
+        btnSalvar.addEventListener('click', async () => {
+            btnSalvar.disabled = true;
+            try {
+                const res = await fetch('/api/bot/configuracoes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramToken: document.getElementById('telegramToken').value,
+                        connectionString: document.getElementById('connectionString').value
+                    })
+                });
+                const data = await res.json();
+                showToast(data.mensagem);
+                await atualizarStatus();
+            } finally {
+                btnSalvar.disabled = false;
+            }
+        });
+
+        btnIniciar.addEventListener('click', async () => {
+            btnIniciar.disabled = true;
+            btnParar.disabled = true;
+            try {
+                const res = await fetch('/api/bot/iniciar', { method: 'POST' });
+                const data = await res.json();
+                showToast(data.mensagem);
+                await atualizarStatus();
+            } catch {
+                await atualizarStatus();
+            }
+        });
+
+        btnParar.addEventListener('click', async () => {
+            btnIniciar.disabled = true;
+            btnParar.disabled = true;
+            try {
+                const res = await fetch('/api/bot/parar', { method: 'POST' });
+                const data = await res.json();
+                showToast(data.mensagem);
+                await atualizarStatus();
+            } catch {
+                await atualizarStatus();
+            }
+        });
+
+        atualizarStatus();
+        setInterval(atualizarStatus, 5000);
+    </script>
+</body>
+</html>

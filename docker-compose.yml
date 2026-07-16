@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: snapcheck-postgres
+    environment:
+      POSTGRES_USER: snapcheck
+      POSTGRES_PASSWORD: snapcheck
+      POSTGRES_DB: snapcheck
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - snapcheck-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U snapcheck -d snapcheck"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  snapcheck:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: snapcheck-app
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__PostgreSQL: Host=postgres;Port=5432;Database=snapcheck;Username=snapcheck;Password=snapcheck
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - snapcheck-net
+
+networks:
+  snapcheck-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

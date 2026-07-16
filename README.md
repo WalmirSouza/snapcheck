@@ -5,7 +5,7 @@
 *Snap the photo. Check the presence. Move on.*
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)]()
+[![.NET](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/)
 
 </div>
 
@@ -27,11 +27,131 @@ Registrar presença ainda é um ritual analógico e falho:
 
 Um bot do Telegram que usa reconhecimento facial pra identificar pessoas, marcar presença e devolver a imagem com os nomes anotados. Em segundos.
 
-
 📷 Foto do grupo → 🤖 Bot processa → ✅ Presença registrada
 
-
 **Sem app extra. Sem hardware. Sem planilha. Sem atrito.**
+
+---
+
+## 🏗️ Arquitetura
+
+```
+Interface Web (ASP.NET)
+        ↓
+BackgroundService (Bot + Pipeline)
+        ↓
+Channel<Mensagem>
+        ↓
+Pipeline (etapas sequenciais)
+        ↓
+PostgreSQL (Dapper)
+```
+
+### Estrutura do projeto
+
+```
+src/SnapCheck/
+├── Program.cs              # Startup + DI
+├── Controllers/            # API do painel
+├── Pages/                  # Interface web
+├── Data/                   # PostgreSQL + Dapper
+├── Bot/                    # Telegram + pipeline
+├── Face/                   # Reconhecimento facial
+└── Imaging/                # Anotação na foto
+```
+
+Um único projeto ASP.NET Core — sem referências entre assemblies.
+
+- .NET 8 / C# / ASP.NET Core
+- Telegram.Bot
+- FaceONNX (detecção + embedding)
+- SixLabors.ImageSharp (anotação)
+- Dapper + PostgreSQL
+- System.Threading.Channels + BackgroundService
+
+---
+
+## 🚀 Como Executar
+
+### Pré-requisitos
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Docker](https://www.docker.com/) (opcional, para PostgreSQL)
+
+### Opção 1 — Docker Compose (recomendado)
+
+```bash
+docker compose up --build
+```
+
+Acesse: **http://localhost:8080**
+
+O PostgreSQL sobe automaticamente com:
+- **Host:** `postgres` (interno) / `localhost:5432` (externo)
+- **Database:** `snapcheck`
+- **User/Password:** `snapcheck`
+
+### Opção 2 — Desenvolvimento local
+
+1. Suba apenas o PostgreSQL:
+
+```bash
+docker compose up postgres -d
+```
+
+2. Execute a aplicação:
+
+```bash
+dotnet run --project src/SnapCheck
+```
+
+3. Acesse: **http://localhost:5000**
+
+### Configuração inicial
+
+1. Abra o painel web
+2. Informe o **Token do Bot** (obtido via [@BotFather](https://t.me/BotFather))
+3. Informe a **Connection String** do PostgreSQL:
+   ```
+   Host=localhost;Port=5432;Database=snapcheck;Username=snapcheck;Password=snapcheck
+   ```
+4. Clique em **Salvar Configurações**
+5. Clique em **Iniciar Bot**
+
+---
+
+## 🤖 Comandos do Bot
+
+| Comando | Descrição |
+|---------|-----------|
+| `/start` | Mensagem de boas-vindas |
+| `/cadastrar` | Fluxo de cadastro (nome + foto de rosto) |
+| `/listar` | Lista pessoas cadastradas |
+| `/frequencia Nome` | Consulta presença de uma pessoa |
+| `/sumidos 7` | Quem não aparece há X dias |
+| `/remover Nome` | Descadastra uma pessoa |
+| *Enviar foto* | Registra presença e devolve imagem anotada |
+
+---
+
+## 🗄️ Banco de Dados
+
+O script `src/SnapCheck/Data/Scripts/init.sql` cria automaticamente:
+
+- `pessoas` — cadastro com embedding facial
+- `presencas` — registros de presença
+- `configuracoes` — token e connection string
+
+---
+
+## 📡 API do Painel
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/api/bot/status` | Status do bot, banco e métricas |
+| `POST` | `/api/bot/configuracoes` | Salva token e connection string |
+| `POST` | `/api/bot/iniciar` | Inicia o bot |
+| `POST` | `/api/bot/parar` | Para o bot |
 
 ---
 
@@ -45,66 +165,8 @@ Um bot do Telegram que usa reconhecimento facial pra identificar pessoas, marcar
 | 🎉 Eventos | Palestras, conferências, meetups |
 | ⛪ Grupos | Religiosos, escoteiros, clubes, ONGs |
 
-> **Qualquer lugar onde alguém reúne pessoas e precisa registrar quem estava lá.**
-
 ---
 
-## 🧠 Fluxo Completo
+## 📄 Licença
 
-### Cadastro (faz uma vez)
-
-/comando + nome da pessoa + foto de rosto → cadastrado
-
-
-### Presença (faz todo dia)
-
-Foto da turma → reconhecimento → presença registrada → foto devolvida com nomes
-
-### Consulta (quando quiser)
-
-/frequencia Nome → histórico de presença
-/sumidos 7 → quem não aparece há 7 dias
-
-### Na prática
-
-1. Professor reúne a turma
-2. Puxa o celular, abre o Telegram
-3. Tira uma foto do grupo e envia pro bot
-4. Em segundos recebe a foto de volta com:
-   - Nome sobre cada rosto reconhecido
-   - Alerta de rostos não reconhecidos (cadastra na hora se quiser)
-   - Presença registrada automaticamente
-   - Aula segue. Zero burocracia.
-
-
----
-
-## 🚀 Funcionalidades
-
-### ✅ MVP — O Essencial
-- [ ] Cadastro de pessoas (nome/apelido + foto de rosto)
-- [ ] Reconhecimento facial em fotos de grupo
-- [ ] Registro automático de presença com data e hora
-- [ ] Foto processada com nomes anotados nos rostos
-- [ ] Alerta para rostos não cadastrados
-- [ ] Comando `/frequencia` — consulta individual
-- [ ] Comando `/sumidos` — alerta de abandono
-
-### 🔜 Versão 1.0
-- [ ] Múltiplos grupos/turmas
-- [ ] Relatórios automáticos (diário, semanal, mensal)
-- [ ] Estatísticas e gráficos
-- [ ] Exportação CSV e PDF
-- [ ] Múltiplos administradores por grupo
-- [ ] Dashboard web complementar
-
-### 💡 Ideias Futuras
-- [ ] Ranking de frequência
-- [ ] Metas personalizadas
-- [ ] Integração com sistemas de mensalidade
-- [ ] Notificações automáticas (ex: "Fulano faltou 3x seguidas")
-- [ ] Modo evento (check-in único)
-- [ ] Suporte multilíngue
-
----
-
+Apache 2.0 — veja [LICENSE](LICENSE).
