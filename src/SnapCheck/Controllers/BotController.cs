@@ -16,6 +16,7 @@ public sealed class BotController(
     IDatabaseInitializer databaseInitializer,
     IPessoaRepository pessoaRepository,
     IPresencaRepository presencaRepository,
+    ITenantRepository tenantRepository,
     IBotMetricsService metricsService,
     IActivityLog activityLog) : ControllerBase
 {
@@ -25,6 +26,7 @@ public sealed class BotController(
         var bancoConectado = await connectionFactory.TestConnectionAsync(cancellationToken);
         var metrics = metricsService.Metrics;
 
+        int totalTenants = 0;
         int totalPessoas = 0;
         int presencasHoje = 0;
 
@@ -32,6 +34,7 @@ public sealed class BotController(
         {
             try
             {
+                totalTenants = await tenantRepository.ContarAtivosAsync(cancellationToken);
                 totalPessoas = await pessoaRepository.ContarAtivasAsync(cancellationToken);
                 presencasHoje = await presencaRepository.ContarHojeAsync(cancellationToken);
             }
@@ -45,6 +48,7 @@ public sealed class BotController(
         {
             BotOnline = metrics.Online,
             BancoConectado = bancoConectado,
+            TotalTenants = totalTenants,
             TotalPessoas = totalPessoas,
             PresencasHoje = presencasHoje,
             FotosProcessadasHoje = metrics.FotosProcessadasHoje,

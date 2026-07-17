@@ -5,26 +5,34 @@ namespace SnapCheck.Data.Repositories;
 
 public interface IPresencaRepository
 {
-    Task RegistrarAsync(int pessoaId, string? turma, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(string nome, CancellationToken cancellationToken = default);
+    Task RegistrarAsync(int tenantId, int pessoaId, string? turma, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(int tenantId, string nome, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Contagem agregada entre todos os tenants — métrica operacional do painel
+    /// (BotController), não expõe dado de negócio de nenhum tenant específico.
+    /// Ver item 01.8 para quando o painel ganhar contexto de tenant.
+    /// </summary>
     Task<int> ContarHojeAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class PresencaRepository(IDbConnectionFactory connectionFactory) : IPresencaRepository
 {
-    public async Task RegistrarAsync(int pessoaId, string? turma, CancellationToken cancellationToken = default)
+    public async Task RegistrarAsync(
+        int tenantId, int pessoaId, string? turma, CancellationToken cancellationToken = default)
     {
         const string sql = """
-            INSERT INTO presencas (pessoa_id, data_hora, turma)
-            VALUES (@pessoaId, NOW(), @turma)
+            INSERT INTO presencas (tenant_id, pessoa_id, data_hora, turma)
+            VALUES (@tenantId, @pessoaId, NOW(), @turma)
             """;
 
         await using var connection = (Npgsql.NpgsqlConnection)await connectionFactory.CreateConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(
-            new CommandDefinition(sql, new { pessoaId, turma }, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { tenantId, pessoaId, turma }, cancellationToken: cancellationToken));
     }
 
-    public async Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(string nome, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(
+        int tenantId, string nome, CancellationToken cancellationToken = default)
     {
         const string sql = """
             SELECT pr.id,
@@ -34,14 +42,17 @@ public sealed class PresencaRepository(IDbConnectionFactory connectionFactory) :
                    p.nome AS NomePessoa
             FROM presencas pr
             INNER JOIN pessoas p ON p.id = pr.pessoa_id
-            WHERE p.ativo = TRUE AND LOWER(p.nome) = LOWER(@nome)
+            WHERE pr.tenant_id = @tenantId
+              AND p.tenant_id = @tenantId
+              AND p.ativo = TRUE
+              AND LOWER(p.nome) = LOWER(@nome)
             ORDER BY pr.data_hora DESC
             LIMIT 30
             """;
 
         await using var connection = (Npgsql.NpgsqlConnection)await connectionFactory.CreateConnectionAsync(cancellationToken);
         var result = await connection.QueryAsync<Presenca>(
-            new CommandDefinition(sql, new { nome }, cancellationToken: cancellationToken));
+            new CommandDefinition(sql, new { tenantId, nome }, cancellationToken: cancellationToken));
         return result.AsList();
     }
 

@@ -1,5 +1,6 @@
 using SnapCheck.Bot.Services;
 using SnapCheck.Data.Repositories;
+using SnapCheck.Data.Tenancy;
 using Telegram.Bot.Types;
 
 namespace SnapCheck.Bot.Handlers;
@@ -7,6 +8,7 @@ namespace SnapCheck.Bot.Handlers;
 public sealed class ConsultaHandler(
     IPessoaRepository pessoaRepository,
     IPresencaRepository presencaRepository,
+    ITenantContext tenantContext,
     IActivityLog activityLog)
 {
     public async Task<string?> HandleAsync(Update update, CancellationToken cancellationToken = default)
@@ -17,9 +19,11 @@ public sealed class ConsultaHandler(
             return null;
         }
 
+        var tenantId = tenantContext.TenantId!.Value;
+
         if (texto.StartsWith("/listar", StringComparison.OrdinalIgnoreCase))
         {
-            var pessoas = await pessoaRepository.ListarAtivasAsync(cancellationToken);
+            var pessoas = await pessoaRepository.ListarAtivasAsync(tenantId, cancellationToken);
             if (pessoas.Count == 0)
             {
                 return "Nenhuma pessoa cadastrada.";
@@ -37,13 +41,13 @@ public sealed class ConsultaHandler(
                 return "Use: /frequencia Nome";
             }
 
-            var pessoa = await pessoaRepository.ObterPorNomeAsync(nome, cancellationToken);
+            var pessoa = await pessoaRepository.ObterPorNomeAsync(tenantId, nome, cancellationToken);
             if (pessoa is null)
             {
                 return $"❌ Pessoa *{nome}* não encontrada.";
             }
 
-            var presencas = await presencaRepository.ListarPorPessoaAsync(nome, cancellationToken);
+            var presencas = await presencaRepository.ListarPorPessoaAsync(tenantId, nome, cancellationToken);
             if (presencas.Count == 0)
             {
                 return $"📋 *{nome}* ainda não possui presenças registradas.";
@@ -64,7 +68,7 @@ public sealed class ConsultaHandler(
                 return "Use: /sumidos 7";
             }
 
-            var sumidos = await pessoaRepository.ListarSumidosAsync(dias, cancellationToken);
+            var sumidos = await pessoaRepository.ListarSumidosAsync(tenantId, dias, cancellationToken);
             if (sumidos.Count == 0)
             {
                 return $"✅ Todos apareceram nos últimos {dias} dias.";
@@ -83,7 +87,7 @@ public sealed class ConsultaHandler(
                 return "Use: /remover Nome";
             }
 
-            var removido = await pessoaRepository.RemoverPorNomeAsync(nome, cancellationToken);
+            var removido = await pessoaRepository.RemoverPorNomeAsync(tenantId, nome, cancellationToken);
             if (!removido)
             {
                 return $"❌ Pessoa *{nome}* não encontrada.";

@@ -10,6 +10,7 @@ public sealed class StatusResponse
 {
     public bool BotOnline { get; set; }
     public bool BancoConectado { get; set; }
+    public int TotalTenants { get; set; }
     public int TotalPessoas { get; set; }
     public int PresencasHoje { get; set; }
     public int FotosProcessadasHoje { get; set; }

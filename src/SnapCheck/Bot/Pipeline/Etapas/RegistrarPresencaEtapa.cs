@@ -12,6 +12,7 @@ public sealed class RegistrarPresencaEtapa(IPresencaRepository presencaRepositor
         foreach (var match in context.Matches.Where(m => m.Reconhecido))
         {
             await presencaRepository.RegistrarAsync(
+                context.Mensagem.TenantId,
                 match.PessoaId!.Value,
                 context.Mensagem.Turma,
                 cancellationToken);

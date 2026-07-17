@@ -1,6 +1,7 @@
 using SnapCheck.Bot;
 using SnapCheck.Data;
 using SnapCheck.Data.Repositories;
+using SnapCheck.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,7 @@ var app = builder.Build();
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseMiddleware<AdminApiKeyMiddleware>();
 app.MapControllers();
 app.MapRazorPages();
 app.MapGet("/", () => Results.Redirect("/Index"));

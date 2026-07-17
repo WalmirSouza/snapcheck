@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using SnapCheck.Bot.Services;
 using SnapCheck.Data;
 using SnapCheck.Data.Repositories;
+using SnapCheck.Data.Tenancy;
 using SnapCheck.Face;
 using Telegram.Bot.Types;
 
@@ -22,6 +23,7 @@ public sealed class CadastroState
 public sealed class CadastroHandler(
     IFaceService faceService,
     IPessoaRepository pessoaRepository,
+    ITenantContext tenantContext,
     IActivityLog activityLog)
 {
     private readonly ConcurrentDictionary<long, CadastroState> _estados = new();
@@ -54,7 +56,7 @@ public sealed class CadastroHandler(
                 return "Por favor, envie um nome válido.";
             }
 
-            var existente = await pessoaRepository.ObterPorNomeAsync(texto, cancellationToken);
+            var existente = await pessoaRepository.ObterPorNomeAsync(tenantContext.TenantId!.Value, texto, cancellationToken);
             if (existente is not null)
             {
                 _estados.TryRemove(chatId, out _);
@@ -88,6 +90,7 @@ public sealed class CadastroHandler(
         }
 
         var id = await pessoaRepository.InserirAsync(
+            tenantContext.TenantId!.Value,
             estado.Nome!,
             EmbeddingHelper.ToBytes(embedding),
             cancellationToken);

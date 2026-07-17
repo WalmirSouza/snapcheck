@@ -15,6 +15,12 @@ public interface ITenantRepository
 
     Task<TenantVinculacaoResultado> VincularChatAsync(
         long chatId, string codigoAtivacao, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Contagem de tenants ativos — indicador somente-leitura do painel de
+    /// instância (item 01.8). Não expõe dado de nenhum tenant específico.
+    /// </summary>
+    Task<int> ContarAtivosAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class TenantRepository(IDbConnectionFactory connectionFactory) : ITenantRepository
@@ -62,5 +68,13 @@ public sealed class TenantRepository(IDbConnectionFactory connectionFactory) : I
                 cancellationToken: cancellationToken));
 
         return TenantVinculacaoResultado.Sucesso;
+    }
+
+    public async Task<int> ContarAtivosAsync(CancellationToken cancellationToken = default)
+    {
+        const string sql = "SELECT COUNT(*) FROM tenants WHERE status = 'ativo'";
+
+        await using var connection = (Npgsql.NpgsqlConnection)await connectionFactory.CreateConnectionAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<int>(new CommandDefinition(sql, cancellationToken: cancellationToken));
     }
 }

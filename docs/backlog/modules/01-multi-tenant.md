@@ -51,22 +51,22 @@
 ### 01.5 — Atualizar repositórios para filtrar por tenant
 - Prioridade: Alta
 - Dificuldade: Alta
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[dev-backend]]
 - Depende de: 01.3, 01.4
 - Critério de aceite: `PessoaRepository.cs` e `PresencaRepository.cs` (e qualquer outro repositório) filtram por `tenant_id` em toda query — sem exceção. Nenhuma query nova pode ser escrita sem o filtro.
-- Retomada: —
+- Retomada: Concluído em 2026-07-16. **Achado crítico durante a implementação**: `CompararRostosEtapa` (em `DetectarRostosEtapa.cs`) chamava `pessoaRepository.ListarAtivasAsync` sem filtro nenhum — uma foto de qualquer tenant era comparada contra as pessoas cadastradas de **todos** os tenants (vazamento/match cruzado real, não só teórico). Corrigido usando `context.Mensagem.TenantId`. Todos os métodos de `IPessoaRepository`/`IPresencaRepository` que retornam ou gravam dado de negócio agora exigem `tenantId` como primeiro parâmetro (`ListarAtivasAsync`, `ObterPorNomeAsync`, `InserirAsync`, `RemoverPorNomeAsync`, `ListarSumidosAsync`, `RegistrarAsync`, `ListarPorPessoaAsync`), com filtro `tenant_id = @tenantId` na query (defesa em profundidade mesmo onde já havia JOIN com `pessoas` filtrada). **Exceção deliberada e documentada** (XML doc em ambas interfaces): `ContarAtivasAsync`/`ContarHojeAsync` permanecem agregados cross-tenant porque só alimentam a métrica operacional do `BotController` (que ainda não tem contexto de tenant — isso é o item 01.8) e não expõem nome/dado de nenhuma pessoa. Chamadores atualizados: `CadastroHandler`/`ConsultaHandler` passaram a injetar `ITenantContext` e ler `tenantContext.TenantId!.Value` (rodam dentro do escopo aberto por `BotManager`); `RegistrarPresencaEtapa`/`DetectarRostosEtapa` usam `context.Mensagem.TenantId` (rodam no pipeline, fora da cadeia async do update — AsyncLocal não serve aqui, decisão já tomada no item 01.4). `dotnet build SnapCheck.sln` passou limpo. Próximo passo: 01.6 (índices compostos — já cobertos em boa parte pelo `init.sql` do item 01.3, revisar com `EXPLAIN ANALYZE` quando houver dado real) ou 01.7 (testes de isolamento, hoje sem projeto de teste — depende do módulo 10); 01.9 (API key) segue independente.
 
 ---
 
 ### 01.6 — Índices compostos por tenant
 - Prioridade: Média
 - Dificuldade: Baixa
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[dev-backend]], [[devops-sre]] (revisão de performance)
 - Depende de: 01.3
 - Critério de aceite: Índices compostos criados conforme definido no ADR 01.2 (`tenant_id, turma, aula, pessoa, data`), validados com `EXPLAIN ANALYZE` nas queries mais frequentes do pipeline.
-- Retomada: —
+- Retomada: Concluído em 2026-07-16, validado no Postgres real do `docker-compose` local (não só teoria). Reconstruí a imagem (`docker compose up -d --build snapcheck`) para aplicar o `init.sql` novo — log confirmou "Banco de dados inicializado com sucesso" e `\d` mostrou `tenants`, `tenant_chat_telegram`, `tenant_id`/FK/índices novos em `pessoas`/`presencas` exatamente como esperado. Rodei uma transação de teste (1000 pessoas + 3000 presenças sintéticas em 2 tenants, `ROLLBACK` no final para não deixar resíduo): `EXPLAIN ANALYZE` confirmou `Index Scan using idx_pessoas_tenant_nome_ativo` para `ObterPorNomeAsync` e `Index Scan using idx_presencas_tenant_pessoa_data` para `ListarPorPessoaAsync` — os índices são realmente usados pelo planner, não é só suposição. De brinde, validei o isolamento na prática: mesmo nome (`Joao Silva`) em dois tenants diferentes funcionou (2 linhas), e duplicar o mesmo nome dentro do mesmo tenant foi corretamente rejeitado pela constraint (`duplicate key value violates unique constraint "idx_pessoas_tenant_nome_ativo"`). Confirmei que o `ROLLBACK` não deixou dado nenhum (`SELECT COUNT(*) FROM pessoas` voltou a 0). Próximo passo: 01.8 (painel com contexto de tenant) ou 01.7 (segue bloqueado até existir projeto de teste no módulo 10).
 
 ---
 
@@ -84,20 +84,21 @@
 ### 01.8 — Painel: contexto de tenant no admin
 - Prioridade: Média
 - Dificuldade: Média
-- Status: Não iniciado — 0%
+- Status: Concluído — 100% (redefinido)
 - Skills recomendadas: [[dev-frontend]]
 - Depende de: 01.4
-- Critério de aceite: Painel web (`BotController.cs` e sua UI) reflete o tenant autenticado e nunca mistura configuração/métrica de tenants diferentes na mesma sessão.
-- Retomada: —
+- Critério de aceite original: Painel web (`BotController.cs` e sua UI) reflete o tenant autenticado e nunca mistura configuração/métrica de tenants diferentes na mesma sessão.
+- **Redefinição consciente (confirmada com o usuário em 2026-07-16)**: o critério original supunha um painel por tenant, mas o ADR 0001 e o item 01.9 já haviam decidido que o painel/`BotController` é um console da instância inteira, protegido só por API key (sem identidade de tenant em requisições HTTP — só o chat do Telegram tem isso, via `/vincular`). Construir seleção de tenant agora seria antecipar uma feature de admin multi-tenant que ninguém pediu. Escopo revisado: deixar explícito que é um painel de instância + indicador somente-leitura "tenants ativos". Painel por tenant de verdade fica para quando o RBAC (módulo 04) ou um portal do cliente existir.
+- Retomada: Concluído em 2026-07-16. Adicionado `ITenantRepository.ContarAtivosAsync` (`SELECT COUNT(*) FROM tenants WHERE status='ativo'`), exposto em `StatusResponse.TotalTenants` via `BotController`, e card "Tenants ativos" no painel (`Pages/Index.cshtml`) com um aviso no cabeçalho deixando explícito que é um console de instância compartilhada. Validado ponta a ponta no `docker-compose` real: adicionei `Admin__ApiKey: dev-local-only` ao `docker-compose.yml` (só ambiente local, mesmo padrão das credenciais de Postgres já hardcoded ali) e reconstruí o container — `curl` sem header → `401`; com `X-Admin-Api-Key` → `200` retornando `{"totalTenants":1,"bancoConectado":true,...}` (o tenant piloto criado pela migração do item 01.3). Módulo 01 fica em 8/9 itens (89%). Único item restante é **01.7 — testes de isolamento**, que está genuinamente bloqueado: não existe projeto de teste no repositório (isso é o módulo 10, ainda não iniciado). Próximo passo natural: iniciar módulo 10 (item 10.1/10.3, criar o projeto de teste) para poder fechar 01.7, ou seguir para outro módulo (02 é o próximo mais lógico, já que 01 está praticamente fechado).
 
 ---
 
 ### 01.9 — Autenticação mínima (API key) para rotas administrativas
 - Prioridade: Alta
 - Dificuldade: Baixa
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[dev-backend]]
 - Depende de: 01.2 (ADR 0001)
 - Item descoberto durante o ADR 01.2 — não estava no desenho original do módulo, virou pré-requisito bloqueante ao constatar que `BotController.cs` não tem nenhuma autenticação hoje.
 - Critério de aceite: Middleware exige header `X-Admin-Api-Key` em toda rota de `BotController` (iniciar/parar bot, configurações), validado contra segredo de ambiente (não em `configuracoes`/banco). Rotas do fluxo do bot no Telegram (`/vincular`, cadastro, consulta) não usam essa API key. Explicitamente marcado como solução temporária, a ser substituída (não estendida) pelo RBAC completo do módulo 04.
-- Retomada: —
+- Retomada: Concluído em 2026-07-16. Criado `AdminApiKeyMiddleware` (`src/SnapCheck/Security/AdminApiKeyMiddleware.cs`), fail-closed: sem `Admin:ApiKey` configurado retorna 503 (não deixa passar); com chave configurada e header `X-Admin-Api-Key` ausente/errado retorna 401. Registrado em `Program.cs` logo após `UseRouting()`, antes de `MapControllers()`. `appsettings.json` ganhou `Admin:ApiKey` vazio (prod fica bloqueado até configurar via ambiente/secret); `appsettings.Development.json` ganhou `dev-local-only` só para não travar o `dotnet run` local. **Efeito colateral necessário**: o painel web (`Pages/Index.cshtml`) fazia `fetch` direto nos endpoins — sem ajuste, o middleware quebraria o painel inteiro. Adicionei `apiFetch()` no JS da página, que pede a chave uma vez via `prompt()`, guarda em `localStorage` e anexa o header em toda chamada; em 401 limpa o storage e avisa para recarregar. Validado com smoke test real: subi a aplicação (`dotnet run`), `curl` sem header → `401`; `curl -H "X-Admin-Api-Key: dev-local-only"` → `200`. Processo de teste encerrado depois. Módulo 01 fica em 6/9 itens (67%) — restam 01.6 (índices, baixa dificuldade, pode ser rápido), 01.7 (testes de isolamento — bloqueado até o módulo 10 existir um projeto de teste) e 01.8 (painel com contexto de tenant, dev-frontend).

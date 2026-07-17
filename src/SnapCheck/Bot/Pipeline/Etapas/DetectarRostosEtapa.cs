@@ -39,7 +39,7 @@ public sealed class CompararRostosEtapa(
             throw new InvalidOperationException("Imagem não disponível para comparação.");
         }
 
-        var pessoas = await pessoaRepository.ListarAtivasAsync(cancellationToken);
+        var pessoas = await pessoaRepository.ListarAtivasAsync(context.Mensagem.TenantId, cancellationToken);
         var cadastro = pessoas
             .Select(p => (p.Id, p.Nome, EmbeddingHelper.FromBytes(p.Embedding)))
             .ToList();

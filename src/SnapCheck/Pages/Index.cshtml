@@ -216,6 +216,10 @@
     <header class="header">
         <h1>📸 SnapCheck</h1>
         <p>Controle de presença por foto via Telegram</p>
+        <p style="font-size: 0.8rem; margin-top: 0.15rem;">
+            Console operacional da instância compartilhada — métricas agregadas de todos os tenants,
+            sem seleção de tenant individual (ver item 01.8 do backlog).
+        </p>
     </header>
 
     <main class="container">
@@ -250,6 +254,10 @@
                 <div class="status-card">
                     <div class="label">Banco de Dados</div>
                     <div class="value" id="dbStatus">—</div>
+                </div>
+                <div class="status-card">
+                    <div class="label">Tenants ativos</div>
+                    <div class="value" id="totalTenants">—</div>
                 </div>
             </div>
 
@@ -293,6 +301,29 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
+        // Rotas /api/bot exigem X-Admin-Api-Key (ADR 0001, Decisão 2 — stopgap
+        // até o RBAC do módulo 04). Pede a chave uma vez e guarda no navegador.
+        const API_KEY_STORAGE = 'snapcheck_admin_api_key';
+
+        function obterApiKey() {
+            let chave = localStorage.getItem(API_KEY_STORAGE);
+            if (!chave) {
+                chave = prompt('Informe a chave de API administrativa (X-Admin-Api-Key):') || '';
+                localStorage.setItem(API_KEY_STORAGE, chave);
+            }
+            return chave;
+        }
+
+        async function apiFetch(url, options = {}) {
+            const headers = { ...(options.headers || {}), 'X-Admin-Api-Key': obterApiKey() };
+            const res = await fetch(url, { ...options, headers });
+            if (res.status === 401) {
+                localStorage.removeItem(API_KEY_STORAGE);
+                showToast('Chave de API inválida. Recarregue a página para informar novamente.');
+            }
+            return res;
+        }
+
         const btnSalvar = document.getElementById('btnSalvar');
         const btnIniciar = document.getElementById('btnIniciar');
         const btnParar = document.getElementById('btnParar');
@@ -304,7 +335,7 @@
 
         async function atualizarStatus() {
             try {
-                const res = await fetch('/api/bot/status');
+                const res = await apiFetch('/api/bot/status');
                 const data = await res.json();
 
                 document.getElementById('botStatus').textContent = data.botOnline ? 'Online' : 'Offline';
@@ -312,6 +343,8 @@
 
                 document.getElementById('dbStatus').textContent = data.bancoConectado ? 'Conectado' : 'Desconectado';
                 document.getElementById('dbStatus').className = 'value ' + (data.bancoConectado ? 'connected' : 'disconnected');
+
+                document.getElementById('totalTenants').textContent = data.totalTenants;
 
                 setBotoesEstado(data.botOnline);
 
@@ -333,7 +366,7 @@
         btnSalvar.addEventListener('click', async () => {
             btnSalvar.disabled = true;
             try {
-                const res = await fetch('/api/bot/configuracoes', {
+                const res = await apiFetch('/api/bot/configuracoes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -353,7 +386,7 @@
             btnIniciar.disabled = true;
             btnParar.disabled = true;
             try {
-                const res = await fetch('/api/bot/iniciar', { method: 'POST' });
+                const res = await apiFetch('/api/bot/iniciar', { method: 'POST' });
                 const data = await res.json();
                 showToast(data.mensagem);
                 await atualizarStatus();
@@ -366,7 +399,7 @@
             btnIniciar.disabled = true;
             btnParar.disabled = true;
             try {
-                const res = await fetch('/api/bot/parar', { method: 'POST' });
+                const res = await apiFetch('/api/bot/parar', { method: 'POST' });
                 const data = await res.json();
                 showToast(data.mensagem);
                 await atualizarStatus();
