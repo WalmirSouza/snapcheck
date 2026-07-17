@@ -1,10 +1,11 @@
 using SnapCheck.Bot.Models;
 using SnapCheck.Bot.Services;
+using SnapCheck.Data.Tenancy;
 using Telegram.Bot.Types;
 
 namespace SnapCheck.Bot.Handlers;
 
-public sealed class FotoHandler(IMessageChannel messageChannel, IActivityLog activityLog)
+public sealed class FotoHandler(IMessageChannel messageChannel, ITenantContext tenantContext, IActivityLog activityLog)
 {
     public async Task<string?> HandleAsync(Update update, CancellationToken cancellationToken = default)
     {
@@ -18,9 +19,14 @@ public sealed class FotoHandler(IMessageChannel messageChannel, IActivityLog act
 
         var turma = message.Chat.Title ?? message.Chat.Username ?? message.Chat.Id.ToString();
 
+        // TenantId sempre resolvido: BotManager só chama este handler dentro do
+        // escopo de tenant (ver HandleUpdateAsync). A fila desacopla do bot em
+        // memória, então o valor precisa ser copiado aqui de forma explícita —
+        // ITenantContext (AsyncLocal) não atravessa esse limite.
         await messageChannel.EnfileirarAsync(new MensagemProcessamento
         {
             Tipo = TipoMensagem.FotoPresenca,
+            TenantId = tenantContext.TenantId!.Value,
             ChatId = message.Chat.Id,
             MessageId = message.MessageId,
             FileId = photo.FileId,

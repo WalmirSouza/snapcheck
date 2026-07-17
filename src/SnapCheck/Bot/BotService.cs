@@ -3,6 +3,7 @@ using SnapCheck.Bot.Handlers;
 using SnapCheck.Bot.Services;
 using SnapCheck.Data;
 using SnapCheck.Data.Repositories;
+using SnapCheck.Data.Tenancy;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -22,6 +23,9 @@ public sealed class BotManager(
     IConfiguracaoRepository configuracaoRepository,
     IDbConnectionFactory connectionFactory,
     IBotClientProvider botClientProvider,
+    ITenantRepository tenantRepository,
+    ITenantContext tenantContext,
+    VincularHandler vincularHandler,
     StartHandler startHandler,
     CadastroHandler cadastroHandler,
     FotoHandler fotoHandler,
@@ -102,6 +106,7 @@ public sealed class BotManager(
     {
         await client.SetMyCommands(
         [
+            new BotCommand { Command = "vincular", Description = "Vincular este chat a um cliente" },
             new BotCommand { Command = "start", Description = "Abrir menu com botões" },
             new BotCommand { Command = "cadastrar", Description = "Cadastrar nova pessoa" },
             new BotCommand { Command = "listar", Description = "Listar pessoas cadastradas" },
@@ -118,56 +123,37 @@ public sealed class BotManager(
             return;
         }
 
+        var chatId = update.Message.Chat.Id;
+
         try
         {
-            string? resposta = null;
+            var texto = string.IsNullOrWhiteSpace(update.Message.Text) ? null : update.Message.Text.Trim();
+            var comando = texto is null ? null : BotKeyboard.ParaComando(texto) ?? texto;
 
-            if (!string.IsNullOrWhiteSpace(update.Message.Text))
+            string? resposta;
+
+            if (comando is not null && comando.StartsWith("/vincular", StringComparison.OrdinalIgnoreCase))
             {
-                var texto = update.Message.Text.Trim();
-
-                if (texto == BotKeyboard.RegistrarPresenca)
-                {
-                    resposta = BotKeyboard.InstrucaoEnviarFoto;
-                }
-                else
-                {
-                    var comando = BotKeyboard.ParaComando(texto) ?? texto;
-
-                    if (comando.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
-                    {
-                        resposta = await startHandler.HandleAsync(update, cancellationToken);
-                    }
-                    else if (comando.StartsWith("/cadastrar", StringComparison.OrdinalIgnoreCase))
-                    {
-                        resposta = await cadastroHandler.HandleAsync(
-                            CriarUpdateComTexto(update, comando), cancellationToken);
-                    }
-                    else
-                    {
-                        var updateComando = CriarUpdateComTexto(update, comando);
-                        resposta = await cadastroHandler.HandleAsync(updateComando, cancellationToken)
-                            ?? await consultaHandler.HandleAsync(updateComando, cancellationToken);
-                    }
-                }
+                resposta = await vincularHandler.HandleAsync(chatId, comando, cancellationToken);
             }
-
-            if (update.Message.Photo?.Length > 0)
+            else
             {
-                if (cadastroHandler.EstaEmCadastro(update.Message.Chat.Id))
+                var tenantId = await tenantRepository.ObterTenantIdPorChatAsync(chatId, cancellationToken);
+                if (tenantId is null)
                 {
-                    var fotoBytes = await BaixarFotoAsync(bot, update, cancellationToken);
-                    resposta = await cadastroHandler.HandleFotoAsync(update, fotoBytes, cancellationToken);
+                    resposta = "🔒 Este chat ainda não está vinculado a nenhum cliente.\n" +
+                        "Use */vincular CODIGO* com o código de ativação enviado pelo SnapCheck.";
                 }
                 else
                 {
-                    resposta = await fotoHandler.HandleAsync(update, cancellationToken);
+                    using var _ = tenantContext.BeginScope(tenantId.Value);
+                    resposta = await ProcessarUpdateAsync(bot, update, chatId, texto, comando, cancellationToken);
                 }
             }
 
             if (!string.IsNullOrWhiteSpace(resposta))
             {
-                await EnviarComMenuAsync(bot, update.Message.Chat.Id, resposta, cancellationToken);
+                await EnviarComMenuAsync(bot, chatId, resposta, cancellationToken);
             }
         }
         catch (Exception ex)
@@ -178,10 +164,58 @@ public sealed class BotManager(
 
             await EnviarComMenuAsync(
                 bot,
-                update.Message.Chat.Id,
+                chatId,
                 "❌ Ocorreu um erro ao processar sua mensagem. Tente novamente.",
                 cancellationToken);
         }
+    }
+
+    private async Task<string?> ProcessarUpdateAsync(
+        ITelegramBotClient bot,
+        Update update,
+        long chatId,
+        string? texto,
+        string? comando,
+        CancellationToken cancellationToken)
+    {
+        string? resposta = null;
+
+        if (texto is not null)
+        {
+            if (texto == BotKeyboard.RegistrarPresenca)
+            {
+                resposta = BotKeyboard.InstrucaoEnviarFoto;
+            }
+            else if (comando!.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
+            {
+                resposta = await startHandler.HandleAsync(update, cancellationToken);
+            }
+            else if (comando.StartsWith("/cadastrar", StringComparison.OrdinalIgnoreCase))
+            {
+                resposta = await cadastroHandler.HandleAsync(CriarUpdateComTexto(update, comando), cancellationToken);
+            }
+            else
+            {
+                var updateComando = CriarUpdateComTexto(update, comando);
+                resposta = await cadastroHandler.HandleAsync(updateComando, cancellationToken)
+                    ?? await consultaHandler.HandleAsync(updateComando, cancellationToken);
+            }
+        }
+
+        if (update.Message!.Photo?.Length > 0)
+        {
+            if (cadastroHandler.EstaEmCadastro(chatId))
+            {
+                var fotoBytes = await BaixarFotoAsync(bot, update, cancellationToken);
+                resposta = await cadastroHandler.HandleFotoAsync(update, fotoBytes, cancellationToken);
+            }
+            else
+            {
+                resposta = await fotoHandler.HandleAsync(update, cancellationToken);
+            }
+        }
+
+        return resposta;
     }
 
     internal static async Task EnviarComMenuAsync(

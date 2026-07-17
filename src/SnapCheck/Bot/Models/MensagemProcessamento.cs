@@ -8,6 +8,7 @@ public enum TipoMensagem
 public sealed class MensagemProcessamento
 {
     public TipoMensagem Tipo { get; init; }
+    public required int TenantId { get; init; }
     public long ChatId { get; init; }
     public int MessageId { get; init; }
     public string FileId { get; init; } = string.Empty;

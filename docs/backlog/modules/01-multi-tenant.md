@@ -29,22 +29,22 @@
 ### 01.3 — Adicionar `tenant_id` ao schema (init.sql)
 - Prioridade: Alta
 - Dificuldade: Alta
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[dev-backend]]
 - Depende de: 01.2
 - Critério de aceite: Todas as tabelas de negócio em `init.sql` (pessoas, presenças, configurações, turmas/aulas se existirem) possuem `tenant_id NOT NULL` com FK para tabela `tenants`, e migração cobre dados existentes atribuindo-os a um tenant default.
-- Retomada: —
+- Retomada: Concluído em 2026-07-16 em `src/SnapCheck/Data/Scripts/init.sql`. Adicionadas tabelas `tenants` (com seed do tenant piloto `codigo_ativacao='PILOTO-MIGRACAO'`) e `tenant_chat_telegram` (chat_id único → tenant, suporte ao `/vincular`). `pessoas` e `presencas` ganharam `tenant_id` via `ALTER TABLE ADD COLUMN IF NOT EXISTS` + backfill (`presencas` herda o tenant da própria pessoa via JOIN) + `SET NOT NULL` + FK adicionada em bloco `DO $$ ... EXCEPTION WHEN duplicate_object` (idempotente, já que `init.sql` roda a cada start via `DatabaseInitializer.cs`). Índice único de nome trocou de global (`idx_pessoas_nome_ativo`) para `(tenant_id, LOWER(nome))` (`idx_pessoas_tenant_nome_ativo`); índice de presença virou `(tenant_id, pessoa_id, data_hora DESC)`. `configuracoes` ficou intencionalmente sem `tenant_id` (decisão do ADR 0001) — mantive a seed de `postgres_connection_string` porque `Program.cs` ainda lê essa chave como fallback; a remoção definitiva é do item 01.9, não deste. `dotnet build SnapCheck.sln` passou (só avisos pré-existentes de vulnerabilidade do ImageSharp). Próximo passo: 01.4 (middleware/contexto de resolução de tenant) com `dev-backend`, que agora tem `tenant_id` disponível para se apoiar; 01.9 (API key) pode ser feito em paralelo por não depender de 01.4.
 
 ---
 
 ### 01.4 — Middleware/contexto de resolução de tenant
 - Prioridade: Alta
 - Dificuldade: Média
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[dev-backend]]
 - Depende de: 01.2
 - Critério de aceite: Existe um mecanismo central (middleware/`ITenantContext`) que resolve o tenant da requisição (token, subdomínio ou header, conforme decidido no ADR) e o disponibiliza para os repositórios sem precisar passar `tenant_id` manualmente em cada chamada.
-- Retomada: —
+- Retomada: Concluído em 2026-07-16. Investigação prévia (Explore) mostrou que não existe `IUpdateHandler`/DI scope por update — tudo é singleton e o roteamento acontece direto em `BotManager.HandleUpdateAsync`, com fotos desacopladas via `IMessageChannel` (fila in-memory) consumida depois por `PipelineService` em outro loop. Isso descartou `AsyncLocal` puro como suficiente (não atravessa a fila) — decisão: `ITenantContext` (AsyncLocal, `src/SnapCheck/Data/Tenancy/ITenantContext.cs`) cobre o trecho síncrono dentro do mesmo update (Cadastro/Consulta/Start), e `MensagemProcessamento.TenantId` (`required int`, `src/SnapCheck/Bot/Models/MensagemProcessamento.cs`) carrega o valor explicitamente através da fila para o pipeline. Criados: `ITenantRepository`/`TenantRepository` (resolve tenant por `chat_id` e implementa a vinculação — `src/SnapCheck/Data/Repositories/TenantRepository.cs`), `VincularHandler` (comando `/vincular CODIGO` — `src/SnapCheck/Bot/Handlers/VincularHandler.cs`). `BotManager.HandleUpdateAsync` foi reestruturado: resolve tenant por `chatId` antes de qualquer roteamento; chat não vinculado só pode rodar `/vincular`, qualquer outra coisa recebe aviso; roteamento antigo foi extraído para `ProcessarUpdateAsync` sem mudar o comportamento, só movido para dentro do `using tenantContext.BeginScope(...)`. `FotoHandler` agora injeta `ITenantContext` e preenche `TenantId` ao enfileirar. DI atualizado em `ServiceCollectionExtensions.cs`. `dotnet build SnapCheck.sln` passou limpo (só avisos pré-existentes do ImageSharp). Não há projeto de testes ainda para rodar (módulo 10). Próximo passo: 01.5 (repositórios `PessoaRepository`/`PresencaRepository` passam a exigir `tenantId` e a usar `ctx.Mensagem.TenantId`/`tenantContext.TenantId` nas chamadas) — é o item que efetivamente fecha o ciclo de isolamento; 01.9 (API key) pode ser feito em paralelo.
 
 ---
 

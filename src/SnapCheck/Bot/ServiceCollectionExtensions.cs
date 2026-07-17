@@ -5,6 +5,7 @@ using SnapCheck.Bot.Pipeline.Etapas;
 using SnapCheck.Bot.Services;
 using SnapCheck.Data;
 using SnapCheck.Data.Repositories;
+using SnapCheck.Data.Tenancy;
 using SnapCheck.Face;
 using SnapCheck.Imaging;
 
@@ -19,6 +20,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConfiguracaoRepository, ConfiguracaoRepository>();
         services.AddSingleton<IPessoaRepository, PessoaRepository>();
         services.AddSingleton<IPresencaRepository, PresencaRepository>();
+        services.AddSingleton<ITenantRepository, TenantRepository>();
+        services.AddSingleton<ITenantContext, TenantContext>();
 
         services.AddSingleton<IFaceService, FaceService>();
         services.AddSingleton<IImageAnnotator, ImageAnnotator>();
@@ -32,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CadastroHandler>();
         services.AddSingleton<FotoHandler>();
         services.AddSingleton<ConsultaHandler>();
+        services.AddSingleton<VincularHandler>();
 
         services.AddSingleton<IPipelineEtapa, DownloadFotoEtapa>();
         services.AddSingleton<IPipelineEtapa, DetectarRostosEtapa>();
