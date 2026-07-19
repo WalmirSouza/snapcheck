@@ -405,7 +405,7 @@
                 }
 
                 if (!res.ok) {
-                    lista.innerHTML = '<p class="muted">Erro ao buscar revisões.</p>';
+                    showToast('Não foi possível buscar revisões agora.');
                     return;
                 }
 
@@ -416,18 +416,18 @@
                 }
 
                 lista.innerHTML = revisoes.map(r => `
-                        <div class="revisao-card">
-                            <strong>#${r.id} — ${r.turma || 'Turma não identificada'}</strong>
-                            <div class="meta">
-                                Criada em ${new Date(r.criadoEm).toLocaleString('pt-BR')} ·
-                                Expira em ${new Date(r.expiraEm).toLocaleString('pt-BR')} ·
-                                ${r.itensPendentes}/${r.totalItens} itens pendentes
-                            </div>
-                            <div class="acoes">
-                                <button type="button" class="btn" onclick="abrirRevisao(${tenantId}, ${r.id})">Abrir</button>
-                            </div>
-                        </div>
-                    `).join('');
+                                <div class="revisao-card">
+                                    <strong>#${r.id} — ${r.turma || 'Turma não identificada'}</strong>
+                                    <div class="meta">
+                                        Criada em ${new Date(r.criadoEm).toLocaleString('pt-BR')} ·
+                                        Expira em ${new Date(r.expiraEm).toLocaleString('pt-BR')} ·
+                                        ${r.itensPendentes}/${r.totalItens} itens pendentes
+                                    </div>
+                                    <div class="acoes">
+                                        <button type="button" class="btn" onclick="abrirRevisao(${tenantId}, ${r.id})">Abrir</button>
+                                    </div>
+                                </div>
+                            `).join('');
             });
 
             window.abrirRevisao = async (tenantId, revisaoId) => {
@@ -448,20 +448,20 @@
                     `Revisão #${revisao.id} — ${revisao.turma || 'Turma não identificada'}`;
 
                 document.getElementById('detalheItens').innerHTML = revisao.itens.map(item => `
-                        <div class="item-row" data-item-id="${item.id}">
-                            <div>
-                                <div class="nome">${item.nomeSugerido || '(não reconhecido)'}</div>
-                                <div class="confianca">confiança: ${item.confianca !== null ? (item.confianca * 100).toFixed(0) + '%' : '—'}</div>
-                            </div>
-                            <select class="decisao">
-                                <option value="aprovada" ${item.decisao === 'aprovada' ? 'selected' : ''}>Aprovar</option>
-                                <option value="rejeitada" ${item.decisao === 'rejeitada' ? 'selected' : ''}>Rejeitar</option>
-                                <option value="reatribuida" ${item.decisao === 'reatribuida' ? 'selected' : ''}>Reatribuir</option>
-                            </select>
-                            <input type="number" class="pessoa-final" placeholder="ID pessoa (se reatribuir)" value="${item.pessoaFinalId ?? ''}" />
-                            <input type="text" class="motivo" placeholder="Motivo (opcional)" value="${item.motivo ?? ''}" />
-                        </div>
-                    `).join('');
+                                <div class="item-row" data-item-id="${item.id}">
+                                    <div>
+                                        <div class="nome">${item.nomeSugerido || '(não reconhecido)'}</div>
+                                        <div class="confianca">confiança: ${item.confianca !== null ? (item.confianca * 100).toFixed(0) + '%' : '—'}</div>
+                                    </div>
+                                    <select class="decisao">
+                                        <option value="aprovada" ${item.decisao === 'aprovada' ? 'selected' : ''}>Aprovar</option>
+                                        <option value="rejeitada" ${item.decisao === 'rejeitada' ? 'selected' : ''}>Rejeitar</option>
+                                        <option value="reatribuida" ${item.decisao === 'reatribuida' ? 'selected' : ''}>Reatribuir</option>
+                                    </select>
+                                    <input type="number" class="pessoa-final" placeholder="ID pessoa (se reatribuir)" value="${item.pessoaFinalId ?? ''}" />
+                                    <input type="text" class="motivo" placeholder="Motivo (opcional)" value="${item.motivo ?? ''}" />
+                                </div>
+                            `).join('');
 
                 document.getElementById('painelDetalhe').style.display = 'block';
             };
