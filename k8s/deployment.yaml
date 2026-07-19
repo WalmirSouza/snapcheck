@@ -1,0 +1,53 @@
+# Manifest preparatório (item 10.5) — não conectado a nenhum ambiente real ainda.
+# Confirmado com o usuário em 2026-07-19: não existe cluster/VPS/cloud hoje;
+# isso fica pronto para quando existir, sem workflow de CD apontando pra cá.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snapcheck
+  labels:
+    app: snapcheck
+spec:
+  # replicas: 1 é OBRIGATÓRIO hoje, não é escolha de capacidade.
+  # BotManager/ITenantContext/IMessageChannel/PipelineService são singletons
+  # em memória por processo: 2+ réplicas significariam 2 pollers do Telegram
+  # no mesmo token (a API do Telegram rejeita/conflita) e filas de pipeline
+  # não compartilhadas entre pods. Escalar horizontalmente de verdade depende
+  # do módulo 05 (RabbitMQ) substituir o Channel in-memory por fila externa.
+  replicas: 1
+  strategy:
+    type: Recreate # não RollingUpdate — dois pods rodando ao mesmo tempo quebra o bot (ver acima)
+  selector:
+    matchLabels:
+      app: snapcheck
+  template:
+    metadata:
+      labels:
+        app: snapcheck
+    spec:
+      containers:
+        - name: snapcheck
+          image: snapcheck:latest # substituir por <registry>/snapcheck:<tag> no deploy real
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: snapcheck-config
+            - secretRef:
+                name: snapcheck-secrets
+          readinessProbe:
+            # /api/bot/status exige X-Admin-Api-Key (AdminApiKeyMiddleware) —
+            # não dá pra usar em probe sem vazar a chave no manifest. /Index
+            # não é protegido e já confirma que o servidor web está de pé.
+            httpGet:
+              path: /Index
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"

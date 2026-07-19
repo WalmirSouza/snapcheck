@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: snapcheck
+  labels:
+    app: snapcheck
+spec:
+  # ClusterIP por padrão — expor externamente (LoadBalancer/Ingress) é decisão
+  # de quando existir um ambiente real e um domínio, fora de escopo aqui.
+  type: ClusterIP
+  selector:
+    app: snapcheck
+  ports:
+    - port: 8080
+      targetPort: 8080

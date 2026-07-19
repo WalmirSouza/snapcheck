@@ -45,6 +45,9 @@ Thumbs.db
 ## Docker
 docker-compose.override.yml
 
+## Kubernetes (secret.example.yaml é o modelo versionado; secret.yaml real, não)
+k8s/secret.yaml
+
 ## FaceONNX models (downloaded at runtime via NuGet)
 *.onnx
 

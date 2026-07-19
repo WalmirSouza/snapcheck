@@ -51,11 +51,11 @@
 ### 10.5 — Deploy automático com rollback
 - Prioridade: Média
 - Dificuldade: Alta
-- Status: Não iniciado — 0%
+- Status: Concluído — 100% (preparação; teste real de rollback fica pendente até existir um ambiente)
 - Skills recomendadas: [[devops-sre]]
 - Depende de: 10.3
 - Critério de aceite: Deploy automatizado para o ambiente alvo (preparado para Kubernetes) com rollback testado e documentado.
-- Retomada: —
+- Retomada: Concluído em 2026-07-19 dentro do escopo possível — **confirmado com o usuário que não existe ambiente real ainda** (sem VPS/cloud/cluster), então não conectei nada a infraestrutura de verdade. `docs/adr/0004-deploy-rollback.md` documenta as decisões; `k8s/deployment.yaml`, `service.yaml`, `configmap.yaml`, `secret.example.yaml` (modelo, `k8s/secret.yaml` real no `.gitignore`) e `docs/runbooks/deploy-rollback.md` (passo a passo de deploy e rollback). **Achado importante durante a preparação**: a aplicação não é horizontalmente escalável hoje — `IBotManager`/`ITenantContext`/`IMessageChannel`/`PipelineService` são singletons em memória; 2+ réplicas causariam dois pollers do Telegram no mesmo token e filas não compartilhadas entre pods. `Deployment` usa `replicas: 1` (obrigatório, não configurável) e `strategy: Recreate` — escalar de verdade é pré-requisito do módulo 05 (RabbitMQ), registrado como achado, não só nota. Corrigi também o `readinessProbe`, que eu tinha inicialmente apontado para `/api/bot/status` (protegido pela API key do item 01.9) — ajustado para `/Index` (sem autenticação) para não precisar vazar a chave no manifest. Validei sintaxe dos 4 YAMLs com `yaml.safe_load_all` (Python) — `kubectl apply --dry-run` não funciona sem cluster configurado, confirma a ausência de ambiente. **Pendência real, não fechada**: nenhum passo do runbook foi executado contra um cluster de verdade (não existe) — o critério de aceite "rollback testado" só fecha de fato quando houver ambiente para testar (deploy de versão quebrada + confirmar recuperação via rollback).
 
 ---
 
