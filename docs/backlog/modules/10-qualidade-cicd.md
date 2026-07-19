@@ -40,11 +40,11 @@
 ### 10.4 — Análise estática e segurança no pipeline
 - Prioridade: Média
 - Dificuldade: Baixa
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[devops-sre]], [[seguranca-lgpd]]
 - Depende de: 10.3
 - Critério de aceite: Pipeline roda análise estática e scan de segurança (dependências vulneráveis) a cada build, com falha bloqueante para vulnerabilidades críticas.
-- Retomada: —
+- Retomada: Concluído em 2026-07-19. **Análise estática**: build do CI passa a rodar com `-p:EnableNETAnalyzers=true -p:AnalysisLevel=latest -p:TreatWarningsAsErrors=true` — qualquer warning de compilador/analisador passa a quebrar o build (hoje o projeto está limpo, 0 warnings, confirmado localmente antes de habilitar). **Achado durante a implementação**: `TreatWarningsAsErrors` também promovia os avisos de vulnerabilidade do próprio NuGet (`NU1902`/`NU1903`, já conhecidos — `SixLabors.ImageSharp` 3.1.6) para erro, quebrando o build por completo mesmo sendo só High/Moderate — contradizendo o critério de aceite ("bloqueante para **críticas**"). Corrigido excluindo esses dois códigos do warnaserror via `-p:WarningsNotAsErrors="NU1902;NU1903"`, já que eles são tratados à parte pelo scan de segurança dedicado. **Scan de segurança**: novo step `dotnet list SnapCheck.sln package --vulnerable --include-transitive --format json` + `jq` filtrando `severity == "Critical"`; só bloqueia (`exit 1`) se houver alguma. Validei a lógica de parsing localmente (PowerShell replicando o filtro, já que não há `jq` no ambiente local) contra o JSON real do projeto: 0 críticas, 2 altas (as já conhecidas do ImageSharp) — não bloqueiam, ficam visíveis no log. **Não fiz upgrade do ImageSharp** (3.1.6 → 4.0.0 disponível, corrigiria as vulnerabilidades) porque é um bump de major version com risco real de quebrar `FaceService`/`ImageAnotator` — decisão consciente de não misturar isso com a tarefa de configurar o gate; fica como item futuro de manutenção de dependência, não bloqueado por este item (o gate só barra Crítica, e essas são High/Moderate).
 
 ---
 

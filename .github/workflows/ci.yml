@@ -41,10 +41,27 @@ jobs:
       - name: Restaurar dependências
         run: dotnet restore SnapCheck.sln
 
-      - name: Build
-        run: dotnet build SnapCheck.sln --no-restore --configuration Release
+      - name: Build (com análise estática — warnings de código quebram o build)
+        # WarningsNotAsErrors exclui NU1902/NU1903 (vulnerabilidade de pacote) do
+        # warnaserror: essas duas são tratadas à parte no step de scan abaixo,
+        # que só bloqueia para severidade Crítica (critério de aceite do item 10.4).
+        run: >
+          dotnet build SnapCheck.sln --no-restore --configuration Release
+          -p:EnableNETAnalyzers=true -p:AnalysisLevel=latest -p:TreatWarningsAsErrors=true
+          -p:WarningsNotAsErrors="NU1902;NU1903"
 
       - name: Testes
         env:
           SNAPCHECK_TEST_CONNECTION_STRING: "Host=localhost;Port=5432;Database=snapcheck;Username=ci_test;Password=ci_test"
         run: dotnet test tests/SnapCheck.Tests/SnapCheck.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"
+
+      - name: Scan de dependências vulneráveis
+        run: |
+          dotnet list SnapCheck.sln package --vulnerable --include-transitive --format json > vulnerable.json
+          cat vulnerable.json
+          CRITICAL_COUNT=$(jq '[.projects[].frameworks[]? | ((.topLevelPackages // []) + (.transitivePackages // []))[] | select(.vulnerabilities != null) | .vulnerabilities[] | select(.severity == "Critical")] | length' vulnerable.json)
+          echo "Vulnerabilidades críticas encontradas: $CRITICAL_COUNT"
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "::error::Encontrada(s) $CRITICAL_COUNT vulnerabilidade(s) crítica(s) de dependência — build bloqueado."
+            exit 1
+          fi
