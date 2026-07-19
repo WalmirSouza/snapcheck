@@ -51,11 +51,11 @@
 ### 02.5 — Presença manual auditada
 - Prioridade: Média
 - Dificuldade: Baixa
-- Status: Não iniciado — 0%
+- Status: Concluído — 100% (auditoria via log operacional, não a trilha imutável)
 - Skills recomendadas: [[dev-backend]]
 - Depende de: 01.5
 - Critério de aceite: Inclusão manual de presença registra responsável, motivo, data/horário, e gera evento de auditoria (integra com módulo 04).
-- Retomada: —
+- Retomada: Concluído em 2026-07-19. `PresencaRepository.RegistrarManualAsync` (novo método) grava `status_presenca='manual'`, `responsavel_manual`, `motivo_manual` (colunas novas em `presencas`), respeitando a mesma constraint de idempotência do item 02.3. Endpoint `POST /api/presencas/manual` (`PresencasController`), protegido pela mesma API key administrativa (rota adicionada a `AdminApiKeyMiddleware`). Evento de auditoria hoje é `IActivityLog` (log operacional em memória, já usado em todo o projeto) — **não** é a trilha imutável exigida pelo módulo 04 (item 04.5, que ainda não existe); isso é o mesmo tipo de stopgap documentado no item 01.9 para autenticação, e fica marcado para substituição quando 04.5 chegar. Validado ponta a ponta no Postgres real: sem chave → `401`; com chave → registra; repetir a mesma chamada → `Duplicada` (idempotência respeitada); dados conferidos no banco (`status_presenca='manual'`, responsável e motivo persistidos). Dados de teste removidos depois.
 
 ---
 

@@ -115,3 +115,19 @@ public sealed class TurmaResponse
     public string CodigoVinculacao { get; set; } = string.Empty;
     public bool Ativa { get; set; }
 }
+
+public sealed class RegistrarPresencaManualRequest
+{
+    public int TenantId { get; set; }
+    public int PessoaId { get; set; }
+    public string? Turma { get; set; }
+    public string Responsavel { get; set; } = string.Empty;
+    public string Motivo { get; set; } = string.Empty;
+}
+
+public sealed class RegistrarPresencaManualResponse
+{
+    public bool Sucesso { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string Mensagem { get; set; } = string.Empty;
+}

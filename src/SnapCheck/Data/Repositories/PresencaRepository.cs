@@ -11,6 +11,20 @@ public interface IPresencaRepository
         string? turma,
         string statusPresenca = "completa",
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Presença manual (item 02.5) — exige responsável e motivo, sempre marcada
+    /// com status "manual". Trilha de auditoria hoje é o log operacional
+    /// (IActivityLog, em memória); auditoria imutável de verdade é o item 04.5.
+    /// </summary>
+    Task<RegistroPresencaResultado> RegistrarManualAsync(
+        int tenantId,
+        int pessoaId,
+        string? turma,
+        string responsavel,
+        string motivo,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(int tenantId, string nome, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -52,6 +66,45 @@ public sealed class PresencaRepository(IDbConnectionFactory connectionFactory) :
                     turma,
                     turmaNormalizada,
                     statusPresenca
+                },
+                cancellationToken: cancellationToken));
+
+        return insertedId.HasValue
+            ? RegistroPresencaResultado.Registrada
+            : RegistroPresencaResultado.Duplicada;
+    }
+
+    public async Task<RegistroPresencaResultado> RegistrarManualAsync(
+        int tenantId,
+        int pessoaId,
+        string? turma,
+        string responsavel,
+        string motivo,
+        CancellationToken cancellationToken = default)
+    {
+        var turmaNormalizada = (turma ?? string.Empty).Trim().ToLowerInvariant();
+
+        const string sql = """
+            INSERT INTO presencas
+                (tenant_id, pessoa_id, data_hora, turma, data_dia, turma_normalizada, status_presenca, responsavel_manual, motivo_manual)
+            VALUES
+                (@tenantId, @pessoaId, NOW(), @turma, CURRENT_DATE, @turmaNormalizada, 'manual', @responsavel, @motivo)
+            ON CONFLICT (tenant_id, pessoa_id, turma_normalizada, data_dia) DO NOTHING
+            RETURNING id
+            """;
+
+        await using var connection = (Npgsql.NpgsqlConnection)await connectionFactory.CreateConnectionAsync(cancellationToken);
+        var insertedId = await connection.ExecuteScalarAsync<int?>(
+            new CommandDefinition(
+                sql,
+                new
+                {
+                    tenantId,
+                    pessoaId,
+                    turma,
+                    turmaNormalizada,
+                    responsavel,
+                    motivo
                 },
                 cancellationToken: cancellationToken));
 
