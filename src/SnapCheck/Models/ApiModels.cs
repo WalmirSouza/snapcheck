@@ -83,3 +83,35 @@ public sealed class ConfirmarRevisaoPresencaResponse
     public string Mensagem { get; set; } = string.Empty;
     public int PresencasEfetivadas { get; set; }
 }
+
+public sealed class CriarTurmaRequest
+{
+    public int TenantId { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public string CodigoVinculacao { get; set; } = string.Empty;
+}
+
+public sealed class CriarTurmaResponse
+{
+    public bool Sucesso { get; set; }
+    public int? TurmaId { get; set; }
+    public string Mensagem { get; set; } = string.Empty;
+}
+
+public sealed class AdicionarJanelaRequest
+{
+    public int TenantId { get; set; }
+    public short[] DiasSemana { get; set; } = [];
+    public string HoraInicio { get; set; } = string.Empty;
+    public string HoraFim { get; set; } = string.Empty;
+    public int ToleranciaAtrasoMinutos { get; set; }
+    public short CortePresencaParcialPercentual { get; set; } = 100;
+}
+
+public sealed class TurmaResponse
+{
+    public int Id { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public string CodigoVinculacao { get; set; } = string.Empty;
+    public bool Ativa { get; set; }
+}

@@ -26,6 +26,7 @@ public sealed class BotManager(
     ITenantRepository tenantRepository,
     ITenantContext tenantContext,
     VincularHandler vincularHandler,
+    VincularTurmaHandler vincularTurmaHandler,
     StartHandler startHandler,
     CadastroHandler cadastroHandler,
     FotoHandler fotoHandler,
@@ -107,6 +108,7 @@ public sealed class BotManager(
         await client.SetMyCommands(
         [
             new BotCommand { Command = "vincular", Description = "Vincular este chat a um cliente" },
+            new BotCommand { Command = "turma", Description = "Vincular este chat a uma turma" },
             new BotCommand { Command = "start", Description = "Abrir menu com botões" },
             new BotCommand { Command = "cadastrar", Description = "Cadastrar nova pessoa" },
             new BotCommand { Command = "listar", Description = "Listar pessoas cadastradas" },
@@ -186,7 +188,11 @@ public sealed class BotManager(
             {
                 resposta = BotKeyboard.InstrucaoEnviarFoto;
             }
-            else if (comando!.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
+            else if (comando!.StartsWith("/turma", StringComparison.OrdinalIgnoreCase))
+            {
+                resposta = await vincularTurmaHandler.HandleAsync(chatId, comando, cancellationToken);
+            }
+            else if (comando.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
             {
                 resposta = await startHandler.HandleAsync(update, cancellationToken);
             }

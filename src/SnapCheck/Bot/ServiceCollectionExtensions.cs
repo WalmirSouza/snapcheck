@@ -23,6 +23,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IRevisaoPresencaRepository, RevisaoPresencaRepository>();
         services.AddSingleton<ITenantRepository, TenantRepository>();
         services.AddSingleton<ITenantContext, TenantContext>();
+        services.AddSingleton<ITurmaRepository, TurmaRepository>();
 
         services.AddSingleton<IFaceService, FaceService>();
         services.AddSingleton<IImageAnnotator, ImageAnnotator>();
@@ -37,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<FotoHandler>();
         services.AddSingleton<ConsultaHandler>();
         services.AddSingleton<VincularHandler>();
+        services.AddSingleton<VincularTurmaHandler>();
 
         services.AddSingleton<IPipelineEtapa, DownloadFotoEtapa>();
         services.AddSingleton<IPipelineEtapa, DetectarRostosEtapa>();

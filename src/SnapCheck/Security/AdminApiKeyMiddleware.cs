@@ -13,7 +13,7 @@ namespace SnapCheck.Security;
 /// </summary>
 public sealed class AdminApiKeyMiddleware(RequestDelegate next, ILogger<AdminApiKeyMiddleware> logger)
 {
-    private static readonly string[] RotasProtegidas = ["/api/bot", "/api/revisoes-presenca"];
+    private static readonly string[] RotasProtegidas = ["/api/bot", "/api/revisoes-presenca", "/api/turmas"];
     private const string CabecalhoChave = "X-Admin-Api-Key";
 
     public async Task InvokeAsync(HttpContext context, IConfiguration configuration)

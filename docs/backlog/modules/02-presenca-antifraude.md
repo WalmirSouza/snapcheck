@@ -18,11 +18,11 @@
 ### 02.2 — ADR do motor de regras de presença
 - Prioridade: Alta
 - Dificuldade: Alta
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[arquiteto-software]]
 - Depende de: 02.1
 - Critério de aceite: ADR decidindo se as regras configuráveis por tenant ficam em tabela de configuração (parametrizável) ou motor de regras dedicado, e como isso se integra ao pipeline de eventos (`PresencaValidada`, `PresencaRevisaoPendente`).
-- Retomada: —
+- Retomada: Concluído em 2026-07-19 — `docs/adr/0002-motor-regras-presenca.md`. Três decisões: (1) tabela de configuração parametrizável por Turma/Janela (colunas tipadas), não motor de regras genérico — parâmetros são um conjunto fechado e conhecido, DSL seria over-engineering. (2) Nova etapa de pipeline `ValidarJanelaPresencaEtapa` (entre `CompararRostosEtapa` e `RegistrarPresencaEtapa`), não barramento de eventos — os eventos `PresencaValidada`/`PresencaRevisaoPendente` da visão original são aspiracionais (módulo 05, RabbitMQ, ainda não existe); antecipar isso agora duplicaria trabalho. Ortogonal ao desvio de revisão em grupo do item 02.8 (`Matches.Count > 1`): uma etapa resolve "quem é", a outra resolve "o horário conta". (3) Chave de dedupe do item 02.3 (hoje por dia) precisa migrar para incluir `turma_janela_id` quando 02.7 existir — decisão registrada para não ser esquecida. Próximo passo: 02.7 (Turma como entidade) precisa vir antes de 02.4 poder consultar janela real — é o bloqueador atual.
 
 ---
 
@@ -73,12 +73,14 @@
 ### 02.7 — Turma como entidade + vinculação de chat (`/turma CODIGO`)
 - Prioridade: Alta
 - Dificuldade: Alta
-- Status: Não iniciado — 0%
+- Status: Concluído — 100% (schema + vinculação; falta consumir na validação de janela)
 - Skills recomendadas: [[dev-backend]]
 - Depende de: 02.2
 - Item descoberto durante o levantamento de requisitos 02.1 — não estava no desenho original do módulo. Sem isso, 02.3/02.4 não têm turma/janela real para consultar (hoje `turma` é só texto livre do chat).
 - Critério de aceite: Novas tabelas `turmas` (tenant_id, nome, ativa), `turma_janelas` (turma_id, dias_semana, hora_inicio, hora_fim, tolerancia_atraso_minutos, corte_presenca_parcial_percentual) e `turma_chat_telegram` (turma_id, chat_id — mesmo padrão de `tenant_chat_telegram` do módulo 01). Comando `/turma CODIGO` no bot vincula o chat atual a uma Turma cadastrada. `presencas` passa a referenciar `turma_id`/`turma_janela_id` em vez de só o texto livre. Cadastro de Turma + janelas (painel ou comando administrativo) fica a critério do ADR 02.2 decidir onde entra.
-- Retomada: —
+- Retomada: Concluído em 2026-07-19. Schema em `init.sql` (`turmas` com `UNIQUE(tenant_id, codigo_vinculacao)`, `turma_janelas` com `dias_semana SMALLINT[]`, `hora_inicio`/`hora_fim TIME`, tolerância e corte percentual, `turma_chat_telegram` mesmo padrão de `tenant_chat_telegram`). `ITurmaRepository`/`TurmaRepository` (`CriarAsync`, `AdicionarJanelaAsync`, `ListarPorTenantAsync`, `ObterJanelasAtivasAsync`, `ObterTurmaIdPorChatAsync`, `VincularChatAsync`). Comando `/turma CODIGO` via `VincularTurmaHandler`, roteado em `BotManager` dentro do escopo de tenant já resolvido (usa `ITenantContext`, não precisa reresolver tenant). ADR 0002 não definiu onde o cadastro de Turma/Janela aconteceria — decidi (consistente com o padrão já usado para Revisões) criar `TurmasController` (`/api/turmas`, `/api/turmas/{id}/janelas`), protegido pelo mesmo `AdminApiKeyMiddleware` (rota adicionada à lista `RotasProtegidas`). Validado ponta a ponta no Postgres real: criar turma sem chave → `401`; com chave → criou; listar retornou a turma; adicionar janela (seg-sex 19h-21h, tolerância 10min, corte 50%) persistiu corretamente; duplicar código no mesmo tenant → `409` (constraint funcionando). Dados de teste removidos depois.
+- **Ainda não usado**: `RegistrarPresencaEtapa`/`ValidarJanelaPresencaEtapa` ainda não consultam `ObterTurmaIdPorChatAsync`/`ObterJanelasAtivasAsync` — a entidade existe e pode ser cadastrada/vinculada, mas o pipeline ainda registra presença sem checar janela. Isso é exatamente o item 02.4.
+- Não há UI de cadastro de Turma no painel — só a API. Mesma lógica do módulo 01 (tenant também não tem UI de cadastro, só SQL/API direta) — considerar item futuro se o volume de turmas justificar.
 
 ---
 

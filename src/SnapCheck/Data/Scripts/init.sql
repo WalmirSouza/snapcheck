@@ -17,6 +17,43 @@ CREATE TABLE IF NOT EXISTS tenant_chat_telegram (
     vinculado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Turma como entidade (item 02.7) — vinculação de chat via comando /turma CODIGO,
+-- mesmo padrão de tenant_chat_telegram (ADR 0001).
+CREATE TABLE IF NOT EXISTS turmas (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+    nome VARCHAR(200) NOT NULL,
+    codigo_vinculacao VARCHAR(100) NOT NULL,
+    ativa BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tenant_id, codigo_vinculacao)
+);
+
+-- Janelas de horário recorrentes por turma (ADR 0002 — janela simples, sem
+-- calendário de aulas específicas). Uma turma pode ter várias janelas no
+-- mesmo dia (ex.: academia manhã+noite, confirmado em docs/requisitos/regras-presenca.md).
+CREATE TABLE IF NOT EXISTS turma_janelas (
+    id SERIAL PRIMARY KEY,
+    turma_id INTEGER NOT NULL REFERENCES turmas(id) ON DELETE CASCADE,
+    dias_semana SMALLINT[] NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fim TIME NOT NULL,
+    tolerancia_atraso_minutos INTEGER NOT NULL DEFAULT 0,
+    corte_presenca_parcial_percentual SMALLINT NOT NULL DEFAULT 100,
+    ativa BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_turma_janelas_turma
+    ON turma_janelas (turma_id)
+    WHERE ativa = TRUE;
+
+CREATE TABLE IF NOT EXISTS turma_chat_telegram (
+    id SERIAL PRIMARY KEY,
+    turma_id INTEGER NOT NULL REFERENCES turmas(id),
+    chat_id BIGINT NOT NULL UNIQUE,
+    vinculado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS pessoas (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(200) NOT NULL,
