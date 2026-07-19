@@ -13,12 +13,12 @@ namespace SnapCheck.Security;
 /// </summary>
 public sealed class AdminApiKeyMiddleware(RequestDelegate next, ILogger<AdminApiKeyMiddleware> logger)
 {
-    private const string RotaProtegida = "/api/bot";
+    private static readonly string[] RotasProtegidas = ["/api/bot", "/api/revisoes-presenca"];
     private const string CabecalhoChave = "X-Admin-Api-Key";
 
     public async Task InvokeAsync(HttpContext context, IConfiguration configuration)
     {
-        if (!context.Request.Path.StartsWithSegments(RotaProtegida))
+        if (!RotasProtegidas.Any(rota => context.Request.Path.StartsWithSegments(rota)))
         {
             await next(context);
             return;

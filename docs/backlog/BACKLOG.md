@@ -21,7 +21,7 @@ SnapCheck é uma plataforma SaaS de gestão inteligente de presença por reconhe
 |---|---|---|---|
 | 00 — Núcleo MVP (baseline já entregue) | [modules/00-nucleo-mvp.md](modules/00-nucleo-mvp.md) | — | Concluído — 100% |
 | 01 — Multi-Tenant e Fundação de Dados | [modules/01-multi-tenant.md](modules/01-multi-tenant.md) | Alta (30d) | Em andamento — 8/9 itens (89%) — só falta 01.7, bloqueado até o módulo 10 existir |
-| 02 — Regras de Presença e Antifraude | [modules/02-presenca-antifraude.md](modules/02-presenca-antifraude.md) | Alta (30d) | Em andamento — 1/7 itens (14%) |
+| 02 — Regras de Presença e Antifraude | [modules/02-presenca-antifraude.md](modules/02-presenca-antifraude.md) | Alta (30d) | Em andamento — 3/8 itens (38%) |
 | 03 — Qualidade Biométrica e IA | [modules/03-biometria-ia.md](modules/03-biometria-ia.md) | Alta (30-60d) | Não iniciado — 0% |
 | 04 — Segurança e LGPD | [modules/04-seguranca-lgpd.md](modules/04-seguranca-lgpd.md) | Alta (30-60d) | Não iniciado — 0% |
 | 05 — Resiliência e Mensageria | [modules/05-resiliencia-mensageria.md](modules/05-resiliencia-mensageria.md) | Média (60d) | Não iniciado — 0% |
