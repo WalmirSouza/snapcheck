@@ -17,6 +17,227 @@ CREATE TABLE IF NOT EXISTS tenant_chat_telegram (
     vinculado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS permissoes (
+    id SERIAL PRIMARY KEY,
+    codigo VARCHAR(100) NOT NULL UNIQUE,
+    nome VARCHAR(200) NOT NULL,
+    descricao VARCHAR(300),
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS papeis (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    codigo VARCHAR(100) NOT NULL,
+    nome VARCHAR(200) NOT NULL,
+    descricao VARCHAR(300),
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_papeis_tenant_codigo_ativo
+    ON papeis (COALESCE(tenant_id, 0), LOWER(codigo))
+    WHERE ativo = TRUE;
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    nome VARCHAR(200) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS senha_salt VARCHAR(100);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS senha_hash VARCHAR(255);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS auth_token_hash VARCHAR(255);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS auth_token_expira_em TIMESTAMPTZ;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ultimo_login_em TIMESTAMPTZ;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_tenant_email_ativo
+    ON usuarios (COALESCE(tenant_id, 0), LOWER(email))
+    WHERE ativo = TRUE;
+
+CREATE TABLE IF NOT EXISTS papel_permissoes (
+    id SERIAL PRIMARY KEY,
+    papel_id INTEGER NOT NULL REFERENCES papeis(id) ON DELETE CASCADE,
+    permissao_id INTEGER NOT NULL REFERENCES permissoes(id) ON DELETE CASCADE,
+    concedido_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (papel_id, permissao_id)
+);
+
+CREATE TABLE IF NOT EXISTS usuario_papeis (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    papel_id INTEGER NOT NULL REFERENCES papeis(id) ON DELETE CASCADE,
+    atribuido_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (usuario_id, papel_id)
+);
+
+INSERT INTO permissoes (codigo, nome, descricao)
+VALUES
+    ('tenant.read', 'Ler tenant', 'Visualizar tenants e seus metadados'),
+    ('tenant.write', 'Editar tenant', 'Criar e atualizar tenants'),
+    ('tenant.delete', 'Excluir tenant', 'Desativar ou excluir tenants'),
+    ('usuario.read', 'Ler usuários', 'Visualizar usuários e seus vínculos'),
+    ('usuario.write', 'Editar usuários', 'Criar e atualizar usuários'),
+    ('usuario.delete', 'Excluir usuários', 'Desativar usuários'),
+    ('papel.read', 'Ler papéis', 'Visualizar papéis e permissões'),
+    ('papel.write', 'Editar papéis', 'Criar e atualizar papéis'),
+    ('papel.delete', 'Excluir papéis', 'Desativar papéis'),
+    ('turma.read', 'Ler turmas', 'Visualizar turmas'),
+    ('turma.write', 'Editar turmas', 'Criar e atualizar turmas'),
+    ('turma.delete', 'Excluir turmas', 'Desativar turmas'),
+    ('turno.read', 'Ler turnos', 'Visualizar janelas e turnos'),
+    ('turno.write', 'Editar turnos', 'Criar e atualizar janelas e turnos'),
+    ('turno.delete', 'Excluir turnos', 'Desativar janelas e turnos'),
+    ('professor.read', 'Ler professores', 'Visualizar professores vinculados'),
+    ('professor.write', 'Editar professores', 'Criar e atualizar professores'),
+    ('professor.delete', 'Excluir professores', 'Desativar professores'),
+    ('aluno.read', 'Ler alunos', 'Visualizar alunos vinculados'),
+    ('aluno.write', 'Editar alunos', 'Criar e atualizar alunos'),
+    ('aluno.delete', 'Excluir alunos', 'Desativar alunos'),
+    ('vinculo.turma.write', 'Vincular turma', 'Vincular alunos, professores ou chats a turmas'),
+    ('vinculo.solicitar.write', 'Solicitar vínculo', 'Solicitar entrada em uma turma'),
+    ('presenca.read', 'Ler presenças', 'Consultar presenças'),
+    ('presenca.write', 'Registrar presença', 'Registrar presença por foto ou operação'),
+    ('presenca.manual', 'Registrar presença manual', 'Registrar presença com justificativa'),
+    ('presenca.propria.read', 'Ler presença própria', 'Consultar presença do próprio usuário'),
+    ('presenca.propria.write', 'Registrar presença própria', 'Registrar presença do próprio usuário'),
+    ('revisao.read', 'Ler revisões', 'Visualizar revisões de presença'),
+    ('revisao.write', 'Editar revisões', 'Alterar decisões de revisão'),
+    ('revisao.approve', 'Aprovar revisões', 'Confirmar revisões de presença'),
+    ('relatorio.read', 'Ler relatórios', 'Visualizar relatórios e indicadores'),
+    ('relatorio.export', 'Exportar relatórios', 'Exportar relatórios em PDF ou Excel'),
+    ('pagamento.read', 'Ler pagamentos', 'Visualizar cobranças e status'),
+    ('pagamento.write', 'Editar pagamentos', 'Criar ou atualizar cobranças'),
+    ('pagamento.refund', 'Estornar pagamentos', 'Cancelar ou estornar cobranças'),
+    ('auditoria.read', 'Ler auditoria', 'Visualizar trilha de auditoria')
+ON CONFLICT (codigo) DO NOTHING;
+
+INSERT INTO papeis (tenant_id, codigo, nome, descricao, ativo)
+SELECT NULL, 'super_admin', 'Super Admin', 'Acesso global à plataforma', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM papeis WHERE tenant_id IS NULL AND codigo = 'super_admin');
+
+INSERT INTO papeis (tenant_id, codigo, nome, descricao, ativo)
+SELECT NULL, 'coordenador', 'Coordenador', 'Administração da instituição', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM papeis WHERE tenant_id IS NULL AND codigo = 'coordenador');
+
+INSERT INTO papeis (tenant_id, codigo, nome, descricao, ativo)
+SELECT NULL, 'professor', 'Professor', 'Operação de presença da turma', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM papeis WHERE tenant_id IS NULL AND codigo = 'professor');
+
+INSERT INTO papeis (tenant_id, codigo, nome, descricao, ativo)
+SELECT NULL, 'aluno', 'Aluno', 'Autoatendimento do aluno', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM papeis WHERE tenant_id IS NULL AND codigo = 'aluno');
+
+INSERT INTO papeis (tenant_id, codigo, nome, descricao, ativo)
+SELECT NULL, 'gestor', 'Gestor', 'Visão gerencial e relatórios', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM papeis WHERE tenant_id IS NULL AND codigo = 'gestor');
+
+INSERT INTO papeis (tenant_id, codigo, nome, descricao, ativo)
+SELECT NULL, 'auditor', 'Auditor', 'Leitura para auditoria e conformidade', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM papeis WHERE tenant_id IS NULL AND codigo = 'auditor');
+
+INSERT INTO papeis (tenant_id, codigo, nome, descricao, ativo)
+SELECT NULL, 'operador', 'Operador', 'Suporte operacional', TRUE
+WHERE NOT EXISTS (SELECT 1 FROM papeis WHERE tenant_id IS NULL AND codigo = 'operador');
+
+INSERT INTO papel_permissoes (papel_id, permissao_id)
+SELECT p.id, pr.id
+FROM papeis p
+JOIN permissoes pr ON pr.codigo IN (
+    'tenant.read', 'tenant.write', 'tenant.delete',
+    'usuario.read', 'usuario.write', 'usuario.delete',
+    'papel.read', 'papel.write', 'papel.delete',
+    'turma.read', 'turma.write', 'turma.delete',
+    'turno.read', 'turno.write', 'turno.delete',
+    'professor.read', 'professor.write', 'professor.delete',
+    'aluno.read', 'aluno.write', 'aluno.delete',
+    'vinculo.turma.write', 'vinculo.solicitar.write',
+    'presenca.read', 'presenca.write', 'presenca.manual', 'presenca.propria.read', 'presenca.propria.write',
+    'revisao.read', 'revisao.write', 'revisao.approve',
+    'relatorio.read', 'relatorio.export',
+    'pagamento.read', 'pagamento.write', 'pagamento.refund',
+    'auditoria.read'
+)
+WHERE p.tenant_id IS NULL AND p.codigo = 'super_admin'
+ON CONFLICT (papel_id, permissao_id) DO NOTHING;
+
+INSERT INTO papel_permissoes (papel_id, permissao_id)
+SELECT p.id, pr.id
+FROM papeis p
+JOIN permissoes pr ON pr.codigo IN (
+    'usuario.read', 'usuario.write',
+    'papel.read', 'papel.write',
+    'turma.read', 'turma.write',
+    'turno.read', 'turno.write',
+    'professor.read', 'professor.write',
+    'aluno.read', 'aluno.write',
+    'vinculo.turma.write',
+    'presenca.read', 'presenca.write', 'presenca.manual',
+    'revisao.read', 'revisao.approve',
+    'relatorio.read', 'relatorio.export',
+    'pagamento.read',
+    'auditoria.read'
+)
+WHERE p.tenant_id IS NULL AND p.codigo = 'coordenador'
+ON CONFLICT (papel_id, permissao_id) DO NOTHING;
+
+INSERT INTO papel_permissoes (papel_id, permissao_id)
+SELECT p.id, pr.id
+FROM papeis p
+JOIN permissoes pr ON pr.codigo IN (
+    'turma.read',
+    'aluno.read',
+    'presenca.read', 'presenca.write',
+    'presenca.propria.read',
+    'revisao.read', 'revisao.approve',
+    'relatorio.read'
+)
+WHERE p.tenant_id IS NULL AND p.codigo = 'professor'
+ON CONFLICT (papel_id, permissao_id) DO NOTHING;
+
+INSERT INTO papel_permissoes (papel_id, permissao_id)
+SELECT p.id, pr.id
+FROM papeis p
+JOIN permissoes pr ON pr.codigo IN (
+    'presenca.propria.read', 'presenca.propria.write',
+    'vinculo.solicitar.write',
+    'pagamento.read', 'pagamento.write'
+)
+WHERE p.tenant_id IS NULL AND p.codigo = 'aluno'
+ON CONFLICT (papel_id, permissao_id) DO NOTHING;
+
+INSERT INTO papel_permissoes (papel_id, permissao_id)
+SELECT p.id, pr.id
+FROM papeis p
+JOIN permissoes pr ON pr.codigo IN (
+    'relatorio.read', 'relatorio.export',
+    'presenca.read', 'usuario.read', 'aluno.read', 'professor.read',
+    'auditoria.read', 'pagamento.read'
+)
+WHERE p.tenant_id IS NULL AND p.codigo = 'gestor'
+ON CONFLICT (papel_id, permissao_id) DO NOTHING;
+
+INSERT INTO papel_permissoes (papel_id, permissao_id)
+SELECT p.id, pr.id
+FROM papeis p
+JOIN permissoes pr ON pr.codigo IN (
+    'auditoria.read', 'usuario.read', 'turma.read', 'presenca.read', 'revisao.read', 'pagamento.read', 'relatorio.read'
+)
+WHERE p.tenant_id IS NULL AND p.codigo = 'auditor'
+ON CONFLICT (papel_id, permissao_id) DO NOTHING;
+
+INSERT INTO papel_permissoes (papel_id, permissao_id)
+SELECT p.id, pr.id
+FROM papeis p
+JOIN permissoes pr ON pr.codigo IN (
+    'usuario.read', 'aluno.read', 'professor.read', 'turma.read', 'presenca.read'
+)
+WHERE p.tenant_id IS NULL AND p.codigo = 'operador'
+ON CONFLICT (papel_id, permissao_id) DO NOTHING;
+
 -- Turma como entidade (item 02.7) — vinculação de chat via comando /turma CODIGO,
 -- mesmo padrão de tenant_chat_telegram (ADR 0001).
 CREATE TABLE IF NOT EXISTS turmas (

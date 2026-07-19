@@ -34,6 +34,82 @@ public sealed class OperacaoResponse
     public string Mensagem { get; set; } = string.Empty;
 }
 
+public sealed class CriarUsuarioAcessoRequest
+{
+    public int? TenantId { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Senha { get; set; }
+}
+
+public sealed class CriarUsuarioAcessoResponse
+{
+    public bool Sucesso { get; set; }
+    public string Mensagem { get; set; } = string.Empty;
+    public int? UsuarioId { get; set; }
+}
+
+public sealed class UsuarioAcessoResponse
+{
+    public int Id { get; set; }
+    public int? TenantId { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public bool Ativo { get; set; }
+    public IReadOnlyList<string> Papeis { get; set; } = [];
+}
+
+public sealed class CriarPapelAcessoRequest
+{
+    public int? TenantId { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public string Nome { get; set; } = string.Empty;
+    public string? Descricao { get; set; }
+}
+
+public sealed class CriarPapelAcessoResponse
+{
+    public bool Sucesso { get; set; }
+    public string Mensagem { get; set; } = string.Empty;
+    public int? PapelId { get; set; }
+}
+
+public sealed class PapelAcessoResponse
+{
+    public int Id { get; set; }
+    public int? TenantId { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public string Nome { get; set; } = string.Empty;
+    public string? Descricao { get; set; }
+    public bool Ativo { get; set; }
+    public IReadOnlyList<string> Permissoes { get; set; } = [];
+}
+
+public sealed class PermissaoAcessoResponse
+{
+    public int Id { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public string Nome { get; set; } = string.Empty;
+    public string? Descricao { get; set; }
+}
+
+public sealed class LoginAcessoRequest
+{
+    public int? TenantId { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Senha { get; set; } = string.Empty;
+}
+
+public sealed class LoginAcessoResponse
+{
+    public bool Sucesso { get; set; }
+    public string Mensagem { get; set; } = string.Empty;
+    public string? Token { get; set; }
+    public DateTime? ExpiraEm { get; set; }
+    public UsuarioAcessoResponse? Usuario { get; set; }
+    public IReadOnlyList<string> Permissoes { get; set; } = [];
+}
+
 public sealed class CriarRevisaoPresencaRequest
 {
     public int TenantId { get; set; }

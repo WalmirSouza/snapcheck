@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
         services.AddSingleton<IDatabaseInitializer, DatabaseInitializer>();
         services.AddSingleton<IConfiguracaoRepository, ConfiguracaoRepository>();
+        services.AddSingleton<IAcessoRepository, AcessoRepository>();
         services.AddSingleton<IPessoaRepository, PessoaRepository>();
         services.AddSingleton<IPresencaRepository, PresencaRepository>();
         services.AddSingleton<IRevisaoPresencaRepository, RevisaoPresencaRepository>();

@@ -14,6 +14,7 @@ var app = builder.Build();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseMiddleware<AdminApiKeyMiddleware>();
+app.UseMiddleware<AcessoPermissionMiddleware>();
 app.MapControllers();
 app.MapRazorPages();
 app.MapGet("/", () => Results.Redirect("/Index"));

@@ -6,212 +6,310 @@
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SnapCheck — Painel de Controle</title>
     <style>
-        :root {
-            --bg: #0f1419;
-            --surface: #1a2332;
-            --border: #2d3a4f;
-            --text: #e7ecf3;
-            --muted: #8b9cb3;
-            --accent: #3b82f6;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-        }
+            :root {
+                --bg: #0f1419;
+                --surface: #1a2332;
+                --border: #2d3a4f;
+                --text: #e7ecf3;
+                --muted: #8b9cb3;
+                --accent: #3b82f6;
+                --success: #22c55e;
+                --danger: #ef4444;
+                --warning: #f59e0b;
+            }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-        body {
-            font-family: "Segoe UI", system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
+            body {
+                font-family: "Segoe UI", system-ui, sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+                line-height: 1.5;
+            }
 
-        .header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-        }
+            .header {
+                padding: 1.5rem 2rem;
+                border-bottom: 1px solid var(--border);
+                background: var(--surface);
+            }
 
-        .header h1 { font-size: 1.5rem; font-weight: 600; }
-        .header p { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+            .header h1 {
+                font-size: 1.5rem;
+                font-weight: 600;
+            }
 
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+            .header p {
+                color: var(--muted);
+                font-size: 0.9rem;
+                margin-top: 0.25rem;
+            }
 
-        @@media (max-width: 768px) {
-            .container { grid-template-columns: 1fr; padding: 1rem; }
-        }
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                padding: 2rem;
+                max-width: 1200px;
+                margin: 0 auto;
+            }
 
-        .panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-        }
+            @@media (max-width: 768px) {
+                .container {
+                    grid-template-columns: 1fr;
+                    padding: 1rem;
+                }
+            }
 
-        .panel h2 {
-            font-size: 1.1rem;
-            margin-bottom: 1.25rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
-        }
+            .panel {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 1.5rem;
+            }
 
-        .field { margin-bottom: 1rem; }
+            .panel.full {
+                grid-column: 1 / -1;
+            }
 
-        .field label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 0.4rem;
-        }
+            .panel h2 {
+                font-size: 1.1rem;
+                margin-bottom: 1.25rem;
+                padding-bottom: 0.75rem;
+                border-bottom: 1px solid var(--border);
+            }
 
-        .field input {
-            width: 100%;
-            padding: 0.65rem 0.85rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.95rem;
-        }
+            .field {
+                margin-bottom: 1rem;
+            }
 
-        .field input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
+            .field label {
+                display: block;
+                font-size: 0.85rem;
+                color: var(--muted);
+                margin-bottom: 0.4rem;
+            }
 
-        .actions {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
+            .field input {
+                width: 100%;
+                padding: 0.65rem 0.85rem;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                color: var(--text);
+                font-size: 0.95rem;
+            }
 
-        .actions-label {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 0.25rem;
-        }
+            .field input:focus {
+                outline: none;
+                border-color: var(--accent);
+            }
 
-        .btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.75rem 1.25rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.15s;
-        }
+            .actions {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+                margin-top: 1.5rem;
+            }
 
-        .btn:active:not(:disabled) { transform: scale(0.98); }
-        .btn:hover:not(:disabled) { opacity: 0.92; }
-        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+            .actions-label {
+                font-size: 0.85rem;
+                color: var(--muted);
+                margin-bottom: 0.25rem;
+            }
 
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
+            .btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                width: 100%;
+                padding: 0.75rem 1.25rem;
+                border: none;
+                border-radius: 8px;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: transform 0.1s, opacity 0.15s;
+            }
 
-        .btn-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-        }
+            .btn:active:not(:disabled) {
+                transform: scale(0.98);
+            }
 
-        @@media (max-width: 768px) {
-            .btn-row { grid-template-columns: 1fr; }
-        }
+            .btn:hover:not(:disabled) {
+                opacity: 0.92;
+            }
 
-        .status-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
-        }
+            .btn:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
 
-        .status-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.85rem;
-        }
+            .btn-primary {
+                background: var(--accent);
+                color: white;
+            }
 
-        .status-card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .status-card .value { font-size: 1.1rem; font-weight: 600; margin-top: 0.25rem; }
+            .btn-success {
+                background: var(--success);
+                color: white;
+            }
 
-        .online { color: var(--success); }
-        .offline { color: var(--danger); }
-        .connected { color: var(--success); }
-        .disconnected { color: var(--danger); }
+            .btn-danger {
+                background: var(--danger);
+                color: white;
+            }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
-        }
+            .btn-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.75rem;
+            }
 
-        .stat-item {
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 0.75rem;
-            text-align: center;
-        }
+            @@media (max-width: 768px) {
+                .btn-row {
+                    grid-template-columns: 1fr;
+                }
+            }
 
-        .stat-item .number { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
-        .stat-item .desc { font-size: 0.75rem; color: var(--muted); margin-top: 0.15rem; }
+            .status-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+            }
 
-        .log-list {
-            max-height: 220px;
-            overflow-y: auto;
-            font-size: 0.8rem;
-            font-family: Consolas, monospace;
-        }
+            .status-card {
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 0.85rem;
+            }
 
-        .log-entry {
-            padding: 0.4rem 0;
-            border-bottom: 1px solid var(--border);
-            color: var(--muted);
-        }
+            .status-card .label {
+                font-size: 0.75rem;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
 
-        .log-entry.error { color: var(--danger); }
-        .log-entry.warn { color: var(--warning); }
-        .log-entry .time { color: var(--muted); margin-right: 0.5rem; }
+            .status-card .value {
+                font-size: 1.1rem;
+                font-weight: 600;
+                margin-top: 0.25rem;
+            }
 
-        .toast {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            padding: 0.85rem 1.25rem;
-            border-radius: 8px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            display: none;
-            z-index: 100;
-        }
+            .online {
+                color: var(--success);
+            }
 
-        .toast.show { display: block; animation: fadeIn 0.2s; }
-        @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+            .offline {
+                color: var(--danger);
+            }
+
+            .connected {
+                color: var(--success);
+            }
+
+            .disconnected {
+                color: var(--danger);
+            }
+
+            .stats {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+            }
+
+            .stat-item {
+                background: var(--bg);
+                border-radius: 8px;
+                padding: 0.75rem;
+                text-align: center;
+            }
+
+            .stat-item .number {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--accent);
+            }
+
+            .stat-item .desc {
+                font-size: 0.75rem;
+                color: var(--muted);
+                margin-top: 0.15rem;
+            }
+
+            .log-list {
+                max-height: 220px;
+                overflow-y: auto;
+                font-size: 0.8rem;
+                font-family: Consolas, monospace;
+            }
+
+            .log-entry {
+                padding: 0.4rem 0;
+                border-bottom: 1px solid var(--border);
+                color: var(--muted);
+            }
+
+            .log-entry.error {
+                color: var(--danger);
+            }
+
+            .log-entry.warn {
+                color: var(--warning);
+            }
+
+            .log-entry .time {
+                color: var(--muted);
+                margin-right: 0.5rem;
+            }
+
+            .toast {
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                padding: 0.85rem 1.25rem;
+                border-radius: 8px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+                display: none;
+                z-index: 100;
+            }
+
+            .toast.show {
+                display: block;
+                animation: fadeIn 0.2s;
+            }
+
+            @@keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
     </style>
 </head>
+
 <body>
     <header class="header">
         <h1>📸 SnapCheck</h1>
@@ -226,6 +324,34 @@
     </header>
 
     <main class="container">
+        <section class="panel full" style="display: grid; gap: 1rem;">
+            <div>
+                <h2>Autenticação</h2>
+                <p class="muted" id="authStatus">Nenhuma sessão carregada.</p>
+            </div>
+            <div class="btn-row" style="align-items: start;">
+                <div class="field">
+                    <label for="authTenantId">Tenant ID opcional</label>
+                    <input type="number" id="authTenantId" min="1" placeholder="1" />
+                </div>
+                <div class="field">
+                    <label for="authEmail">Email</label>
+                    <input type="email" id="authEmail" placeholder="admin@instituicao.com" autocomplete="username" />
+                </div>
+            </div>
+            <div class="btn-row" style="align-items: start;">
+                <div class="field">
+                    <label for="authSenha">Senha</label>
+                    <input type="password" id="authSenha" placeholder="••••••••" autocomplete="current-password" />
+                </div>
+                <div class="actions" style="margin-top: 0;">
+                    <span class="actions-label">Sessão</span>
+                    <button type="button" id="btnLogin" class="btn btn-primary">🔐 Entrar</button>
+                    <button type="button" id="btnLogout" class="btn btn-danger">🚪 Sair</button>
+                </div>
+            </div>
+        </section>
+
         <section class="panel">
             <h2>Configuração</h2>
             <div class="field">
@@ -234,7 +360,8 @@
             </div>
             <div class="field">
                 <label for="connectionString">Connection String do PostgreSQL</label>
-                <input type="text" id="connectionString" placeholder="Host=localhost;Port=5432;Database=snapcheck;..." />
+                <input type="text" id="connectionString"
+                       placeholder="Host=localhost;Port=5432;Database=snapcheck;..." />
             </div>
 
             <div class="actions">
@@ -296,123 +423,243 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const toast = document.getElementById('toast');
+            const toast = document.getElementById('toast');
+            const authStatus = document.getElementById('authStatus');
 
-        function showToast(msg) {
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        }
-
-        // Rotas /api/bot exigem X-Admin-Api-Key (ADR 0001, Decisão 2 — stopgap
-        // até o RBAC do módulo 04). Pede a chave uma vez e guarda no navegador.
-        const API_KEY_STORAGE = 'snapcheck_admin_api_key';
-
-        function obterApiKey() {
-            let chave = localStorage.getItem(API_KEY_STORAGE);
-            if (!chave) {
-                chave = prompt('Informe a chave de API administrativa (X-Admin-Api-Key):') || '';
-                localStorage.setItem(API_KEY_STORAGE, chave);
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
             }
-            return chave;
-        }
 
-        async function apiFetch(url, options = {}) {
-            const headers = { ...(options.headers || {}), 'X-Admin-Api-Key': obterApiKey() };
-            const res = await fetch(url, { ...options, headers });
-            if (res.status === 401) {
-                localStorage.removeItem(API_KEY_STORAGE);
-                showToast('Chave de API inválida. Recarregue a página para informar novamente.');
+            const AUTH_TOKEN_STORAGE = 'snapcheck_auth_token';
+            const AUTH_USER_STORAGE = 'snapcheck_auth_user';
+
+            function getAuthToken() {
+                return localStorage.getItem(AUTH_TOKEN_STORAGE) || '';
             }
-            return res;
-        }
 
-        const btnSalvar = document.getElementById('btnSalvar');
-        const btnIniciar = document.getElementById('btnIniciar');
-        const btnParar = document.getElementById('btnParar');
+            function getAuthUser() {
+                const payload = localStorage.getItem(AUTH_USER_STORAGE);
+                if (!payload) {
+                    return null;
+                }
 
-        function setBotoesEstado(botOnline) {
-            btnIniciar.disabled = botOnline;
-            btnParar.disabled = !botOnline;
-        }
-
-        async function atualizarStatus() {
-            try {
-                const res = await apiFetch('/api/bot/status');
-                const data = await res.json();
-
-                document.getElementById('botStatus').textContent = data.botOnline ? 'Online' : 'Offline';
-                document.getElementById('botStatus').className = 'value ' + (data.botOnline ? 'online' : 'offline');
-
-                document.getElementById('dbStatus').textContent = data.bancoConectado ? 'Conectado' : 'Desconectado';
-                document.getElementById('dbStatus').className = 'value ' + (data.bancoConectado ? 'connected' : 'disconnected');
-
-                document.getElementById('totalTenants').textContent = data.totalTenants;
-
-                setBotoesEstado(data.botOnline);
-
-                document.getElementById('totalPessoas').textContent = data.totalPessoas;
-                document.getElementById('presencasHoje').textContent = data.presencasHoje;
-                document.getElementById('fotosHoje').textContent = data.fotosProcessadasHoje;
-                document.getElementById('mensagensProcessadas').textContent = data.mensagensProcessadas;
-                document.getElementById('ultimaAtividade').textContent = data.ultimaAtividade || '—';
-
-                const logList = document.getElementById('logList');
-                logList.innerHTML = data.logs.length === 0
-                    ? '<div class="log-entry">Nenhuma atividade registrada.</div>'
-                    : data.logs.map(l => `<div class="log-entry ${l.nivel}"><span class="time">${l.timestamp}</span>${l.mensagem}</div>`).join('');
-            } catch (e) {
-                console.error('Erro ao atualizar status:', e);
+                try {
+                    return JSON.parse(payload);
+                } catch {
+                    return null;
+                }
             }
-        }
 
-        btnSalvar.addEventListener('click', async () => {
-            btnSalvar.disabled = true;
-            try {
-                const res = await apiFetch('/api/bot/configuracoes', {
+            function setAuthSession(token, usuario) {
+                localStorage.setItem(AUTH_TOKEN_STORAGE, token);
+                localStorage.setItem(AUTH_USER_STORAGE, JSON.stringify(usuario));
+            }
+
+            function clearAuthSession() {
+                localStorage.removeItem(AUTH_TOKEN_STORAGE);
+                localStorage.removeItem(AUTH_USER_STORAGE);
+            }
+
+            function atualizarAuthStatus() {
+                const usuario = getAuthUser();
+                if (usuario && getAuthToken()) {
+                    authStatus.textContent = `Sessão ativa: ${usuario.nome || usuario.email}${usuario.tenantId ? ` (tenant ${usuario.tenantId})` : ''}`;
+                    return;
+                }
+
+                authStatus.textContent = 'Nenhuma sessão carregada. Use email e senha para entrar.';
+            }
+
+            function getAuthHeaders(extraHeaders = {}) {
+                const headers = { ...extraHeaders };
+                const token = getAuthToken();
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                    return { headers, hasAuth: true };
+                }
+
+                return { headers, hasAuth: false };
+            }
+
+            async function apiFetch(url, options = {}) {
+                const { headers, hasAuth } = getAuthHeaders(options.headers || {});
+                if (!hasAuth) {
+                    showToast('Faça login para continuar.');
+                    return new Response(null, { status: 401 });
+                }
+
+                const res = await fetch(url, { ...options, headers });
+                if (res.status === 401) {
+                    clearAuthSession();
+                    atualizarAuthStatus();
+                    showToast('Sessão expirada. Faça login novamente.');
+                }
+                return res;
+            }
+
+            document.getElementById('btnLogin').addEventListener('click', async () => {
+                const tenantIdRaw = document.getElementById('authTenantId').value;
+                const email = document.getElementById('authEmail').value.trim();
+                const senha = document.getElementById('authSenha').value;
+
+                if (!email || !senha) {
+                    showToast('Informe email e senha.');
+                    return;
+                }
+
+                const res = await fetch('/api/acessos/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        telegramToken: document.getElementById('telegramToken').value,
-                        connectionString: document.getElementById('connectionString').value
+                        tenantId: tenantIdRaw ? Number(tenantIdRaw) : null,
+                        email,
+                        senha
                     })
                 });
-                const data = await res.json();
-                showToast(data.mensagem);
-                await atualizarStatus();
-            } finally {
-                btnSalvar.disabled = false;
-            }
-        });
 
-        btnIniciar.addEventListener('click', async () => {
-            btnIniciar.disabled = true;
-            btnParar.disabled = true;
-            try {
-                const res = await apiFetch('/api/bot/iniciar', { method: 'POST' });
                 const data = await res.json();
-                showToast(data.mensagem);
-                await atualizarStatus();
-            } catch {
-                await atualizarStatus();
-            }
-        });
+                if (!res.ok || !data.sucesso) {
+                    showToast(data.mensagem || 'Não foi possível autenticar.');
+                    return;
+                }
 
-        btnParar.addEventListener('click', async () => {
-            btnIniciar.disabled = true;
-            btnParar.disabled = true;
-            try {
-                const res = await apiFetch('/api/bot/parar', { method: 'POST' });
-                const data = await res.json();
-                showToast(data.mensagem);
+                setAuthSession(data.token, data.usuario);
+                document.getElementById('authSenha').value = '';
+                atualizarAuthStatus();
+                showToast('Sessão iniciada com sucesso.');
                 await atualizarStatus();
-            } catch {
-                await atualizarStatus();
-            }
-        });
+            });
 
-        atualizarStatus();
-        setInterval(atualizarStatus, 5000);
+            document.getElementById('btnLogout').addEventListener('click', async () => {
+                const token = getAuthToken();
+                if (token) {
+                    await fetch('/api/acessos/logout', {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
+
+                clearAuthSession();
+                atualizarAuthStatus();
+                showToast('Sessão encerrada.');
+                setBotoesEstado(false);
+            });
+
+            const btnSalvar = document.getElementById('btnSalvar');
+            const btnIniciar = document.getElementById('btnIniciar');
+            const btnParar = document.getElementById('btnParar');
+
+            function setBotoesEstado(botOnline) {
+                btnIniciar.disabled = botOnline;
+                btnParar.disabled = !botOnline;
+            }
+
+            async function atualizarStatus() {
+                try {
+                    const res = await apiFetch('/api/bot/status');
+                    if (!res.ok) {
+                        return;
+                    }
+
+                    const data = await res.json();
+
+                    document.getElementById('botStatus').textContent = data.botOnline ? 'Online' : 'Offline';
+                    document.getElementById('botStatus').className = 'value ' + (data.botOnline ? 'online' : 'offline');
+
+                    document.getElementById('dbStatus').textContent = data.bancoConectado ? 'Conectado' : 'Desconectado';
+                    document.getElementById('dbStatus').className = 'value ' + (data.bancoConectado ? 'connected' : 'disconnected');
+
+                    document.getElementById('totalTenants').textContent = data.totalTenants;
+
+                    setBotoesEstado(data.botOnline);
+
+                    document.getElementById('totalPessoas').textContent = data.totalPessoas;
+                    document.getElementById('presencasHoje').textContent = data.presencasHoje;
+                    document.getElementById('fotosHoje').textContent = data.fotosProcessadasHoje;
+                    document.getElementById('mensagensProcessadas').textContent = data.mensagensProcessadas;
+                    document.getElementById('ultimaAtividade').textContent = data.ultimaAtividade || '—';
+
+                    const logList = document.getElementById('logList');
+                    logList.innerHTML = data.logs.length === 0
+                        ? '<div class="log-entry">Nenhuma atividade registrada.</div>'
+                        : data.logs.map(l => `<div class="log-entry ${l.nivel}"><span class="time">${l.timestamp}</span>${l.mensagem}</div>`).join('');
+                } catch (e) {
+                    console.error('Erro ao atualizar status:', e);
+                }
+            }
+
+            btnSalvar.addEventListener('click', async () => {
+                btnSalvar.disabled = true;
+                try {
+                    const res = await apiFetch('/api/bot/configuracoes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            telegramToken: document.getElementById('telegramToken').value,
+                            connectionString: document.getElementById('connectionString').value
+                        })
+                    });
+
+                    if (!res.ok) {
+                        return;
+                    }
+
+                    const data = await res.json();
+                    showToast(data.mensagem);
+                    await atualizarStatus();
+                } finally {
+                    btnSalvar.disabled = false;
+                }
+            });
+
+            btnIniciar.addEventListener('click', async () => {
+                btnIniciar.disabled = true;
+                btnParar.disabled = true;
+                try {
+                    const res = await apiFetch('/api/bot/iniciar', { method: 'POST' });
+                    if (!res.ok) {
+                        await atualizarStatus();
+                        return;
+                    }
+
+                    const data = await res.json();
+                    showToast(data.mensagem);
+                    await atualizarStatus();
+                } catch {
+                    await atualizarStatus();
+                }
+            });
+
+            btnParar.addEventListener('click', async () => {
+                btnIniciar.disabled = true;
+                btnParar.disabled = true;
+                try {
+                    const res = await apiFetch('/api/bot/parar', { method: 'POST' });
+                    if (!res.ok) {
+                        await atualizarStatus();
+                        return;
+                    }
+
+                    const data = await res.json();
+                    showToast(data.mensagem);
+                    await atualizarStatus();
+                } catch {
+                    await atualizarStatus();
+                }
+            });
+
+            atualizarAuthStatus();
+            if (getAuthToken()) {
+                atualizarStatus();
+            }
+            setInterval(() => {
+                if (getAuthToken()) {
+                    atualizarStatus();
+                }
+            }, 5000);
     </script>
 </body>
+
 </html>

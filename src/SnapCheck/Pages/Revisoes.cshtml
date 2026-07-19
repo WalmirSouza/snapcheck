@@ -6,142 +6,199 @@
 }
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>SnapCheck — Revisões de Presença</title>
     <style>
-        :root {
-            --bg: #0f1419;
-            --surface: #1a2332;
-            --border: #2d3a4f;
-            --text: #e7ecf3;
-            --muted: #8b9cb3;
-            --accent: #3b82f6;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-        }
+            :root {
+                --bg: #0f1419;
+                --surface: #1a2332;
+                --border: #2d3a4f;
+                --text: #e7ecf3;
+                --muted: #8b9cb3;
+                --accent: #3b82f6;
+                --success: #22c55e;
+                --danger: #ef4444;
+                --warning: #f59e0b;
+            }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-        body {
-            font-family: "Segoe UI", system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            line-height: 1.5;
-        }
+            body {
+                font-family: "Segoe UI", system-ui, sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                min-height: 100vh;
+                line-height: 1.5;
+            }
 
-        .header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-        }
+            .header {
+                padding: 1.5rem 2rem;
+                border-bottom: 1px solid var(--border);
+                background: var(--surface);
+            }
 
-        .header h1 { font-size: 1.5rem; font-weight: 600; }
-        .header a { color: var(--accent); font-size: 0.85rem; text-decoration: none; }
+            .header h1 {
+                font-size: 1.5rem;
+                font-weight: 600;
+            }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+            .header a {
+                color: var(--accent);
+                font-size: 0.85rem;
+                text-decoration: none;
+            }
 
-        .panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
 
-        .panel h2 {
-            font-size: 1.1rem;
-            margin-bottom: 1.25rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid var(--border);
-        }
+            .panel {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
 
-        .field { margin-bottom: 1rem; }
+            .panel.auth {
+                display: grid;
+                gap: 0.75rem;
+            }
 
-        .field label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 0.4rem;
-        }
+            .panel h2 {
+                font-size: 1.1rem;
+                margin-bottom: 1.25rem;
+                padding-bottom: 0.75rem;
+                border-bottom: 1px solid var(--border);
+            }
 
-        .field input, .field select {
-            width: 100%;
-            padding: 0.65rem 0.85rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.95rem;
-        }
+            .field {
+                margin-bottom: 1rem;
+            }
 
-        .row { display: flex; gap: 0.75rem; align-items: flex-end; }
-        .row .field { flex: 1; margin-bottom: 0; }
+            .field label {
+                display: block;
+                font-size: 0.85rem;
+                color: var(--muted);
+                margin-bottom: 0.4rem;
+            }
 
-        .btn {
-            padding: 0.65rem 1.25rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            background: var(--accent);
-            color: white;
-        }
+            .field input,
+            .field select {
+                width: 100%;
+                padding: 0.65rem 0.85rem;
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                color: var(--text);
+                font-size: 0.95rem;
+            }
 
-        .btn:hover { opacity: 0.92; }
-        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-        .btn-success { background: var(--success); }
+            .row {
+                display: flex;
+                gap: 0.75rem;
+                align-items: flex-end;
+            }
 
-        .revisao-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-        }
+            .row .field {
+                flex: 1;
+                margin-bottom: 0;
+            }
 
-        .revisao-card .meta { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
-        .revisao-card .acoes { margin-top: 0.75rem; }
+            .btn {
+                padding: 0.65rem 1.25rem;
+                border: none;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                cursor: pointer;
+                background: var(--accent);
+                color: white;
+            }
 
-        .item-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 0.5rem;
-            align-items: center;
-            padding: 0.6rem 0;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.9rem;
-        }
+            .btn:hover {
+                opacity: 0.92;
+            }
 
-        .item-row .nome { font-weight: 600; }
-        .item-row .confianca { color: var(--muted); font-size: 0.8rem; }
+            .btn:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+            }
 
-        .muted { color: var(--muted); font-size: 0.85rem; }
+            .btn-success {
+                background: var(--success);
+            }
 
-        .toast {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            padding: 0.85rem 1.25rem;
-            border-radius: 8px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            display: none;
-            z-index: 100;
-        }
+            .revisao-card {
+                background: var(--bg);
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
 
-        .toast.show { display: block; }
+            .revisao-card .meta {
+                font-size: 0.8rem;
+                color: var(--muted);
+                margin-top: 0.25rem;
+            }
+
+            .revisao-card .acoes {
+                margin-top: 0.75rem;
+            }
+
+            .item-row {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr 1fr;
+                gap: 0.5rem;
+                align-items: center;
+                padding: 0.6rem 0;
+                border-bottom: 1px solid var(--border);
+                font-size: 0.9rem;
+            }
+
+            .item-row .nome {
+                font-weight: 600;
+            }
+
+            .item-row .confianca {
+                color: var(--muted);
+                font-size: 0.8rem;
+            }
+
+            .muted {
+                color: var(--muted);
+                font-size: 0.85rem;
+            }
+
+            .toast {
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                padding: 0.85rem 1.25rem;
+                border-radius: 8px;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+                display: none;
+                z-index: 100;
+            }
+
+            .toast.show {
+                display: block;
+            }
     </style>
 </head>
+
 <body>
     <header class="header">
         <h1>📝 Revisões de Presença</h1>
@@ -149,6 +206,27 @@
     </header>
 
     <main class="container">
+        <section class="panel auth">
+            <h2>Autenticação</h2>
+            <p class="muted" id="authStatus">Nenhuma sessão carregada.</p>
+            <div class="row">
+                <div class="field">
+                    <label for="authTenantId">Tenant ID opcional</label>
+                    <input type="number" id="authTenantId" min="1" placeholder="1" />
+                </div>
+                <div class="field">
+                    <label for="authEmail">Email</label>
+                    <input type="email" id="authEmail" placeholder="admin@instituicao.com" autocomplete="username" />
+                </div>
+                <div class="field">
+                    <label for="authSenha">Senha</label>
+                    <input type="password" id="authSenha" placeholder="••••••••" autocomplete="current-password" />
+                </div>
+                <button type="button" id="btnLogin" class="btn">🔐 Entrar</button>
+                <button type="button" id="btnLogout" class="btn btn-success">🚪 Sair</button>
+            </div>
+        </section>
+
         <section class="panel">
             <h2>Buscar revisões pendentes</h2>
             <div class="row">
@@ -173,7 +251,9 @@
 
         <section class="panel">
             <h2>Pendentes</h2>
-            <div id="listaRevisoes"><p class="muted">Informe o Tenant ID e clique em Buscar.</p></div>
+            <div id="listaRevisoes">
+                <p class="muted">Informe o Tenant ID e clique em Buscar.</p>
+            </div>
         </section>
 
         <section class="panel" id="painelDetalhe" style="display: none;">
@@ -188,147 +268,253 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const toast = document.getElementById('toast');
-        function showToast(msg) {
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 4000);
-        }
-
-        const API_KEY_STORAGE = 'snapcheck_admin_api_key';
-        function obterApiKey() {
-            let chave = localStorage.getItem(API_KEY_STORAGE);
-            if (!chave) {
-                chave = prompt('Informe a chave de API administrativa (X-Admin-Api-Key):') || '';
-                localStorage.setItem(API_KEY_STORAGE, chave);
-            }
-            return chave;
-        }
-
-        async function apiFetch(url, options = {}) {
-            const headers = { ...(options.headers || {}), 'X-Admin-Api-Key': obterApiKey() };
-            const res = await fetch(url, { ...options, headers });
-            if (res.status === 401) {
-                localStorage.removeItem(API_KEY_STORAGE);
-                showToast('Chave de API inválida. Recarregue a página para informar novamente.');
-            }
-            return res;
-        }
-
-        let revisaoAtual = null;
-
-        document.getElementById('btnBuscar').addEventListener('click', async () => {
-            const tenantId = document.getElementById('tenantId').value;
-            if (!tenantId) {
-                showToast('Informe o Tenant ID.');
-                return;
+            const toast = document.getElementById('toast');
+            const authStatus = document.getElementById('authStatus');
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 4000);
             }
 
-            const res = await apiFetch(`/api/revisoes-presenca/pendentes?tenantId=${tenantId}`);
-            const lista = document.getElementById('listaRevisoes');
+            const AUTH_TOKEN_STORAGE = 'snapcheck_auth_token';
+            const AUTH_USER_STORAGE = 'snapcheck_auth_user';
 
-            if (!res.ok) {
-                lista.innerHTML = '<p class="muted">Erro ao buscar revisões.</p>';
-                return;
+            function getAuthToken() {
+                return localStorage.getItem(AUTH_TOKEN_STORAGE) || '';
             }
 
-            const revisoes = await res.json();
-            if (revisoes.length === 0) {
-                lista.innerHTML = '<p class="muted">Nenhuma revisão pendente.</p>';
-                return;
+            function getAuthUser() {
+                const payload = localStorage.getItem(AUTH_USER_STORAGE);
+                if (!payload) {
+                    return null;
+                }
+
+                try {
+                    return JSON.parse(payload);
+                } catch {
+                    return null;
+                }
             }
 
-            lista.innerHTML = revisoes.map(r => `
-                <div class="revisao-card">
-                    <strong>#${r.id} — ${r.turma || 'Turma não identificada'}</strong>
-                    <div class="meta">
-                        Criada em ${new Date(r.criadoEm).toLocaleString('pt-BR')} ·
-                        Expira em ${new Date(r.expiraEm).toLocaleString('pt-BR')} ·
-                        ${r.itensPendentes}/${r.totalItens} itens pendentes
-                    </div>
-                    <div class="acoes">
-                        <button type="button" class="btn" onclick="abrirRevisao(${tenantId}, ${r.id})">Abrir</button>
-                    </div>
-                </div>
-            `).join('');
-        });
-
-        window.abrirRevisao = async (tenantId, revisaoId) => {
-            const res = await apiFetch(`/api/revisoes-presenca/${revisaoId}?tenantId=${tenantId}`);
-            if (!res.ok) {
-                showToast('Erro ao abrir revisão.');
-                return;
+            function setAuthSession(token, usuario) {
+                localStorage.setItem(AUTH_TOKEN_STORAGE, token);
+                localStorage.setItem(AUTH_USER_STORAGE, JSON.stringify(usuario));
             }
 
-            const revisao = await res.json();
-            revisaoAtual = { tenantId, revisaoId };
-
-            document.getElementById('detalheTitulo').textContent =
-                `Revisão #${revisao.id} — ${revisao.turma || 'Turma não identificada'}`;
-
-            document.getElementById('detalheItens').innerHTML = revisao.itens.map(item => `
-                <div class="item-row" data-item-id="${item.id}">
-                    <div>
-                        <div class="nome">${item.nomeSugerido || '(não reconhecido)'}</div>
-                        <div class="confianca">confiança: ${item.confianca !== null ? (item.confianca * 100).toFixed(0) + '%' : '—'}</div>
-                    </div>
-                    <select class="decisao">
-                        <option value="aprovada" ${item.decisao === 'aprovada' ? 'selected' : ''}>Aprovar</option>
-                        <option value="rejeitada" ${item.decisao === 'rejeitada' ? 'selected' : ''}>Rejeitar</option>
-                        <option value="reatribuida" ${item.decisao === 'reatribuida' ? 'selected' : ''}>Reatribuir</option>
-                    </select>
-                    <input type="number" class="pessoa-final" placeholder="ID pessoa (se reatribuir)" value="${item.pessoaFinalId ?? ''}" />
-                    <input type="text" class="motivo" placeholder="Motivo (opcional)" value="${item.motivo ?? ''}" />
-                </div>
-            `).join('');
-
-            document.getElementById('painelDetalhe').style.display = 'block';
-        };
-
-        document.getElementById('btnConfirmar').addEventListener('click', async () => {
-            if (!revisaoAtual) {
-                return;
+            function clearAuthSession() {
+                localStorage.removeItem(AUTH_TOKEN_STORAGE);
+                localStorage.removeItem(AUTH_USER_STORAGE);
             }
 
-            const confirmadoPor = document.getElementById('confirmadoPor').value.trim();
-            const perfilConfirmador = document.getElementById('perfilConfirmador').value;
-
-            if (!confirmadoPor) {
-                showToast('Informe seu nome antes de confirmar.');
-                return;
+            function atualizarAuthStatus() {
+                const usuario = getAuthUser();
+                authStatus.textContent = usuario && getAuthToken()
+                    ? `Sessão ativa: ${usuario.nome || usuario.email}`
+                    : 'Nenhuma sessão carregada. Use email e senha para entrar.';
             }
 
-            const linhas = document.querySelectorAll('#detalheItens .item-row');
-            const itens = Array.from(linhas).map(linha => ({
-                itemId: parseInt(linha.dataset.itemId, 10),
-                decisao: linha.querySelector('.decisao').value,
-                pessoaFinalId: linha.querySelector('.pessoa-final').value
-                    ? parseInt(linha.querySelector('.pessoa-final').value, 10)
-                    : null,
-                motivo: linha.querySelector('.motivo').value || null
-            }));
+            function getAuthHeaders(extraHeaders = {}) {
+                const headers = { ...extraHeaders };
+                const token = getAuthToken();
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                    return { headers, hasAuth: true };
+                }
 
-            const res = await apiFetch(
-                `/api/revisoes-presenca/${revisaoAtual.revisaoId}/confirmar`,
-                {
+                return { headers, hasAuth: false };
+            }
+
+            async function apiFetch(url, options = {}) {
+                const { headers, hasAuth } = getAuthHeaders(options.headers || {});
+                if (!hasAuth) {
+                    showToast('Faça login para continuar.');
+                    return new Response(null, { status: 401 });
+                }
+
+                const res = await fetch(url, { ...options, headers });
+                if (res.status === 401) {
+                    clearAuthSession();
+                    atualizarAuthStatus();
+                    showToast('Sessão expirada. Faça login novamente.');
+                }
+                return res;
+            }
+
+            document.getElementById('btnLogin').addEventListener('click', async () => {
+                const tenantIdRaw = document.getElementById('authTenantId').value;
+                const email = document.getElementById('authEmail').value.trim();
+                const senha = document.getElementById('authSenha').value;
+
+                if (!email || !senha) {
+                    showToast('Informe email e senha.');
+                    return;
+                }
+
+                const res = await fetch('/api/acessos/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        tenantId: revisaoAtual.tenantId,
-                        confirmadoPor,
-                        perfilConfirmador,
-                        itens
+                        tenantId: tenantIdRaw ? Number(tenantIdRaw) : null,
+                        email,
+                        senha
                     })
                 });
 
-            const data = await res.json();
-            showToast(data.mensagem || (res.ok ? 'Revisão confirmada.' : 'Erro ao confirmar.'));
+                const data = await res.json();
+                if (!res.ok || !data.sucesso) {
+                    showToast(data.mensagem || 'Não foi possível autenticar.');
+                    return;
+                }
 
-            if (res.ok) {
-                document.getElementById('painelDetalhe').style.display = 'none';
-                document.getElementById('btnBuscar').click();
-            }
-        });
+                setAuthSession(data.token, data.usuario);
+                document.getElementById('authSenha').value = '';
+                atualizarAuthStatus();
+                showToast('Sessão iniciada com sucesso.');
+            });
+
+            document.getElementById('btnLogout').addEventListener('click', async () => {
+                const token = getAuthToken();
+                if (token) {
+                    await fetch('/api/acessos/logout', {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
+
+                clearAuthSession();
+                atualizarAuthStatus();
+                showToast('Sessão encerrada.');
+            });
+
+            atualizarAuthStatus();
+
+            let revisaoAtual = null;
+
+            document.getElementById('btnBuscar').addEventListener('click', async () => {
+                const tenantId = document.getElementById('tenantId').value;
+                if (!tenantId) {
+                    showToast('Informe o Tenant ID.');
+                    return;
+                }
+
+                const res = await apiFetch(`/api/revisoes-presenca/pendentes?tenantId=${tenantId}`);
+                const lista = document.getElementById('listaRevisoes');
+
+                if (res.status === 401) {
+                    return;
+                }
+
+                if (!res.ok) {
+                    lista.innerHTML = '<p class="muted">Erro ao buscar revisões.</p>';
+                    return;
+                }
+
+                const revisoes = await res.json();
+                if (revisoes.length === 0) {
+                    lista.innerHTML = '<p class="muted">Nenhuma revisão pendente.</p>';
+                    return;
+                }
+
+                lista.innerHTML = revisoes.map(r => `
+                        <div class="revisao-card">
+                            <strong>#${r.id} — ${r.turma || 'Turma não identificada'}</strong>
+                            <div class="meta">
+                                Criada em ${new Date(r.criadoEm).toLocaleString('pt-BR')} ·
+                                Expira em ${new Date(r.expiraEm).toLocaleString('pt-BR')} ·
+                                ${r.itensPendentes}/${r.totalItens} itens pendentes
+                            </div>
+                            <div class="acoes">
+                                <button type="button" class="btn" onclick="abrirRevisao(${tenantId}, ${r.id})">Abrir</button>
+                            </div>
+                        </div>
+                    `).join('');
+            });
+
+            window.abrirRevisao = async (tenantId, revisaoId) => {
+                const res = await apiFetch(`/api/revisoes-presenca/${revisaoId}?tenantId=${tenantId}`);
+                if (res.status === 401) {
+                    return;
+                }
+
+                if (!res.ok) {
+                    showToast('Erro ao abrir revisão.');
+                    return;
+                }
+
+                const revisao = await res.json();
+                revisaoAtual = { tenantId, revisaoId };
+
+                document.getElementById('detalheTitulo').textContent =
+                    `Revisão #${revisao.id} — ${revisao.turma || 'Turma não identificada'}`;
+
+                document.getElementById('detalheItens').innerHTML = revisao.itens.map(item => `
+                        <div class="item-row" data-item-id="${item.id}">
+                            <div>
+                                <div class="nome">${item.nomeSugerido || '(não reconhecido)'}</div>
+                                <div class="confianca">confiança: ${item.confianca !== null ? (item.confianca * 100).toFixed(0) + '%' : '—'}</div>
+                            </div>
+                            <select class="decisao">
+                                <option value="aprovada" ${item.decisao === 'aprovada' ? 'selected' : ''}>Aprovar</option>
+                                <option value="rejeitada" ${item.decisao === 'rejeitada' ? 'selected' : ''}>Rejeitar</option>
+                                <option value="reatribuida" ${item.decisao === 'reatribuida' ? 'selected' : ''}>Reatribuir</option>
+                            </select>
+                            <input type="number" class="pessoa-final" placeholder="ID pessoa (se reatribuir)" value="${item.pessoaFinalId ?? ''}" />
+                            <input type="text" class="motivo" placeholder="Motivo (opcional)" value="${item.motivo ?? ''}" />
+                        </div>
+                    `).join('');
+
+                document.getElementById('painelDetalhe').style.display = 'block';
+            };
+
+            document.getElementById('btnConfirmar').addEventListener('click', async () => {
+                if (!revisaoAtual) {
+                    return;
+                }
+
+                const confirmadoPor = document.getElementById('confirmadoPor').value.trim();
+                const perfilConfirmador = document.getElementById('perfilConfirmador').value;
+
+                if (!confirmadoPor) {
+                    showToast('Informe seu nome antes de confirmar.');
+                    return;
+                }
+
+                const linhas = document.querySelectorAll('#detalheItens .item-row');
+                const itens = Array.from(linhas).map(linha => ({
+                    itemId: parseInt(linha.dataset.itemId, 10),
+                    decisao: linha.querySelector('.decisao').value,
+                    pessoaFinalId: linha.querySelector('.pessoa-final').value
+                        ? parseInt(linha.querySelector('.pessoa-final').value, 10)
+                        : null,
+                    motivo: linha.querySelector('.motivo').value || null
+                }));
+
+                const res = await apiFetch(
+                    `/api/revisoes-presenca/${revisaoAtual.revisaoId}/confirmar`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tenantId: revisaoAtual.tenantId,
+                            confirmadoPor,
+                            perfilConfirmador,
+                            itens
+                        })
+                    });
+
+                if (res.status === 401) {
+                    return;
+                }
+
+                const data = await res.json();
+                showToast(data.mensagem || (res.ok ? 'Revisão confirmada.' : 'Erro ao confirmar.'));
+
+                if (res.ok) {
+                    document.getElementById('painelDetalhe').style.display = 'none';
+                    document.getElementById('btnBuscar').click();
+                }
+            });
     </script>
 </body>
+
 </html>
