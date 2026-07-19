@@ -7,7 +7,13 @@ services:
       POSTGRES_PASSWORD: snapcheck
       POSTGRES_DB: snapcheck
     ports:
-      - "5432:5432"
+      # Porta do host mapeada para 5439 (não 5432) porque a máquina de
+      # desenvolvimento já tem várias instâncias de Postgres ocupando as portas
+      # usuais (5432 nativo do Windows, 5433/5434 de outros projetos em
+      # docker-compose) — conflito de infraestrutura local, não afeta a rede
+      # interna do docker-compose (o app continua falando com "postgres:5432"
+      # via snapcheck-net).
+      - "5439:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

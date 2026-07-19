@@ -7,11 +7,11 @@
 ### 10.1 — Requisitos de estratégia de testes
 - Prioridade: Alta
 - Dificuldade: Baixa
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[analista-requisitos]], [[qa-testes]]
 - Depende de: —
 - Critério de aceite: Documento definindo a pirâmide de testes do projeto (o que é unitário, integração, contrato, E2E), meta de cobertura por camada, e ferramentas a usar no stack .NET/Angular.
-- Retomada: —
+- Retomada: Concluído em 2026-07-19 — `docs/requisitos/estrategia-testes.md`. Escopo pragmático: xUnit, dois níveis (unitário com fakes simples, integração contra o Postgres real do `docker-compose` — sem Testcontainers/Moq para não adicionar infra/dependência nova), foco em desbloquear 01.7/02.6 primeiro, 80% de cobertura fica para 10.6 (contínuo). CI/CD decidido separadamente no item 10.2 antes de criar qualquer workflow (mudança de maior impacto, exige confirmação explícita).
 
 ---
 
@@ -29,11 +29,11 @@
 ### 10.3 — Implementar pipeline CI/CD base
 - Prioridade: Alta
 - Dificuldade: Média
-- Status: Não iniciado — 0%
+- Status: Em andamento — projeto de teste pronto e rodando localmente; falta o CI de verdade (workflow automatizado por PR)
 - Skills recomendadas: [[devops-sre]]
 - Depende de: 10.2
 - Critério de aceite: Pipeline executando build + testes + lint/análise estática automaticamente a cada PR, bloqueando merge se falhar.
-- Retomada: —
+- Retomada: Parcial em 2026-07-19. Criado `tests/SnapCheck.Tests` (xUnit, referenciando `src/SnapCheck/SnapCheck.csproj`, adicionado à `SnapCheck.sln`). `dotnet build`/`dotnet test` funcionam localmente e passam (12/12). **Achado de infraestrutura, não de código**: a porta 5432 do host já está ocupada por um Postgres nativo do Windows, e 5433/5434 por outros projetos em docker-compose na mesma máquina — `docker-compose.yml` teve o mapeamento de porta do serviço `postgres` trocado de `5432:5432` para `5439:5432` (só a porta do host; a rede interna do compose continua em `postgres:5432`, sem impacto no app). Testes de integração assumem Postgres acessível em `localhost:5439` (`SNAPCHECK_TEST_CONNECTION_STRING` para sobrescrever). **Ainda falta**: nenhum workflow de CI real (GitHub Actions ou outro) rodando isso automaticamente por PR — isso exige confirmação explícita do usuário antes de criar (mexer em CI/CD é mudança de maior impacto, ver diretriz do item 10.1). Próximo passo: perguntar ao usuário se quer GitHub Actions agora (é o candidato óbvio, repo já está lá) antes de criar o workflow.
 
 ---
 

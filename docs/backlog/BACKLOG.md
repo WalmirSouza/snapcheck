@@ -20,8 +20,8 @@ SnapCheck é uma plataforma SaaS de gestão inteligente de presença por reconhe
 | Módulo | Arquivo | Prioridade | Status |
 |---|---|---|---|
 | 00 — Núcleo MVP (baseline já entregue) | [modules/00-nucleo-mvp.md](modules/00-nucleo-mvp.md) | — | Concluído — 100% |
-| 01 — Multi-Tenant e Fundação de Dados | [modules/01-multi-tenant.md](modules/01-multi-tenant.md) | Alta (30d) | Em andamento — 8/9 itens (89%) — só falta 01.7, bloqueado até o módulo 10 existir |
-| 02 — Regras de Presença e Antifraude | [modules/02-presenca-antifraude.md](modules/02-presenca-antifraude.md) | Alta (30d) | Em andamento — 7/8 itens (88%) — só falta 02.6, bloqueado até o módulo 10 existir |
+| 01 — Multi-Tenant e Fundação de Dados | [modules/01-multi-tenant.md](modules/01-multi-tenant.md) | Alta (30d) | Concluído — 9/9 itens (100%) |
+| 02 — Regras de Presença e Antifraude | [modules/02-presenca-antifraude.md](modules/02-presenca-antifraude.md) | Alta (30d) | Concluído — 8/8 itens (100%) |
 | 03 — Qualidade Biométrica e IA | [modules/03-biometria-ia.md](modules/03-biometria-ia.md) | Alta (30-60d) | Não iniciado — 0% |
 | 04 — Segurança e LGPD | [modules/04-seguranca-lgpd.md](modules/04-seguranca-lgpd.md) | Alta (30-60d) | Não iniciado — 0% |
 | 05 — Resiliência e Mensageria | [modules/05-resiliencia-mensageria.md](modules/05-resiliencia-mensageria.md) | Média (60d) | Não iniciado — 0% |
@@ -29,7 +29,7 @@ SnapCheck é uma plataforma SaaS de gestão inteligente de presença por reconhe
 | 07 — Painel Gerencial e Relatórios | [modules/07-painel-gerencial.md](modules/07-painel-gerencial.md) | Média (60d) | Não iniciado — 0% |
 | 08 — Integrações | [modules/08-integracoes.md](modules/08-integracoes.md) | Média-Baixa (60-90d) | Não iniciado — 0% |
 | 09 — Aplicativo Móvel | [modules/09-app-mobile.md](modules/09-app-mobile.md) | Baixa (90d) | Não iniciado — 0% |
-| 10 — Qualidade, Testes e CI/CD | [modules/10-qualidade-cicd.md](modules/10-qualidade-cicd.md) | Alta (transversal) | Não iniciado — 0% |
+| 10 — Qualidade, Testes e CI/CD | [modules/10-qualidade-cicd.md](modules/10-qualidade-cicd.md) | Alta (transversal) | Em andamento — 1/6 itens (17%), 10.3 parcial — falta decidir CI real (10.2) |
 
 ## Ordem recomendada de ataque
 

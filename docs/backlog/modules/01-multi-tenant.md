@@ -73,11 +73,11 @@
 ### 01.7 — Testes de isolamento entre tenants
 - Prioridade: Alta
 - Dificuldade: Média
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[qa-testes]]
 - Depende de: 01.5
 - Critério de aceite: Teste automatizado prova que uma consulta feita no contexto do Tenant A nunca retorna dado do Tenant B, mesmo em cenários de erro/exceção no meio do pipeline.
-- Retomada: —
+- Retomada: Concluído em 2026-07-19, desbloqueado pelo módulo 10 (`tests/SnapCheck.Tests` criado). `TenantIsolationTests.cs`: `ObterPorNome_NaoRetornaPessoaDeOutroTenant`, `ListarAtivas_SoRetornaPessoasDoProprioTenant`, `MesmoNome_PermiteDoisTenantsDiferentes`, `MesmoNome_MesmoTenant_LancaViolacaoDeConstraint` — 4/4 passando contra o Postgres real do docker-compose. Cada teste cria seus próprios tenants (código único via GUID) e limpa no `DisposeAsync`; confirmado que não deixa resíduo (`SELECT COUNT(*)` voltou a 0 depois). `dotnet test` completo: 12/12 passando (inclui também os testes de 02.6 e o unitário de 02.4).
 
 ---
 

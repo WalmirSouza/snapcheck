@@ -62,11 +62,11 @@
 ### 02.6 — Testes de antifraude e duplicidade
 - Prioridade: Alta
 - Dificuldade: Média
-- Status: Não iniciado — 0%
+- Status: Concluído — 100% (cobertura essencial; matrícula inativa fica sem teste porque a própria regra não existe ainda — fora de escopo v1, ver 02.1)
 - Skills recomendadas: [[qa-testes]]
 - Depende de: 02.3, 02.4
 - Critério de aceite: Casos de teste cobrindo — duplicidade pessoa+aula, foto fora da janela, matrícula inativa, atraso configurado, presença parcial, e regressão do fluxo padrão do módulo 00.
-- Retomada: —
+- Retomada: Concluído em 2026-07-19, desbloqueado pelo módulo 10. `PresencaAntifraudeTests.cs` (integração, Postgres real): duplicidade mesmo dia/mesma turma retorna `Duplicada`; turmas diferentes no mesmo dia registram as duas; presença manual grava responsável/motivo corretamente; presença manual respeita idempotência quando já existe registro automático. `ValidarJanelaPresencaEtapaTests.cs` (unitário, fake de `ITurmaRepository`, sem banco): chat sem turma vinculada bloqueia e explica o motivo; turma sem janela configurada permite (default); dentro da janela+tolerância retorna `Completa`; fora do dia da semana configurado retorna `ForaDaJanela`. 8 testes novos, todos passando (12/12 no total do projeto). "Matrícula inativa" do critério original não tem teste porque a regra em si não existe na v1 (decisão do item 02.1: sem matrícula formal) — não é uma lacuna de teste, é escopo já descartado conscientemente.
 
 ---
 
