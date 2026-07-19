@@ -174,12 +174,17 @@ CREATE TABLE IF NOT EXISTS revisao_faces_itens (
     pessoa_sugerida_id INTEGER REFERENCES pessoas(id),
     nome_sugerido VARCHAR(200),
     confianca REAL,
+    embedding BYTEA,
     decisao VARCHAR(20) NOT NULL DEFAULT 'pendente',
     pessoa_final_id INTEGER REFERENCES pessoas(id),
     decidido_por VARCHAR(200),
     decidido_em TIMESTAMPTZ,
     motivo VARCHAR(300)
 );
+
+-- Backfill de instalações existentes: embedding do rosto detectado na foto,
+-- necessário para a atualização supervisionada de embeddings (item 03.5).
+ALTER TABLE revisao_faces_itens ADD COLUMN IF NOT EXISTS embedding BYTEA;
 
 CREATE INDEX IF NOT EXISTS idx_revisao_faces_revisao
     ON revisao_faces_itens (revisao_id, id);
@@ -214,6 +219,21 @@ CREATE TABLE IF NOT EXISTS revisao_presenca_auditoria (
 
 CREATE INDEX IF NOT EXISTS idx_revisao_auditoria_revisao
     ON revisao_presenca_auditoria (revisao_id, criado_em DESC);
+
+-- Histórico de embeddings (item 03.5, ADR 0005 Decisão 2) — guarda o embedding
+-- anterior sempre que uma revisão confirmada atualiza o embedding de uma
+-- pessoa por blend ponderado. Permite auditoria/reversão manual.
+CREATE TABLE IF NOT EXISTS pessoa_embeddings_historico (
+    id SERIAL PRIMARY KEY,
+    pessoa_id INTEGER NOT NULL REFERENCES pessoas(id),
+    embedding_anterior BYTEA NOT NULL,
+    revisao_id INTEGER REFERENCES revisoes_presenca_grupo(id),
+    motivo VARCHAR(100) NOT NULL DEFAULT 'revisao_confirmada',
+    substituido_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_pessoa_embeddings_historico_pessoa
+    ON pessoa_embeddings_historico (pessoa_id, substituido_em DESC);
 
 -- configuracoes permanece global (infraestrutura do processo compartilhado:
 -- token único do bot, connection string única do banco) — ver ADR 0001,

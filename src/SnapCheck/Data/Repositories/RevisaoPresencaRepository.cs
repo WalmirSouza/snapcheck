@@ -16,6 +16,14 @@ public interface IRevisaoPresencaRepository
 
 public sealed class RevisaoPresencaRepository(IDbConnectionFactory connectionFactory) : IRevisaoPresencaRepository
 {
+    // Mantido em sync manualmente com o default de FaceService.CompararComCadastro
+    // (ADR 0005, Decisão 3) — abaixo disso é o caso de real ganho de aprendizado
+    // supervisionado; igual ou acima já teria sido auto-aceito de qualquer forma.
+    private const float LimiarAutoAceite = 0.42f;
+    private const float PesoEmbeddingAtual = 0.7f;
+    private const float PesoEmbeddingNovo = 0.3f;
+
+
     public async Task<int> CriarAsync(RevisaoCriacaoInput input, CancellationToken cancellationToken = default)
     {
         await using var connection = (Npgsql.NpgsqlConnection)await connectionFactory.CreateConnectionAsync(cancellationToken);
@@ -63,9 +71,9 @@ public sealed class RevisaoPresencaRepository(IDbConnectionFactory connectionFac
 
         const string sqlItem = """
             INSERT INTO revisao_faces_itens
-                (revisao_id, tenant_id, pessoa_sugerida_id, nome_sugerido, confianca, decisao)
+                (revisao_id, tenant_id, pessoa_sugerida_id, nome_sugerido, confianca, embedding, decisao)
             VALUES
-                (@revisaoId, @tenantId, @pessoaSugeridaId, @nomeSugerido, @confianca, @decisao)
+                (@revisaoId, @tenantId, @pessoaSugeridaId, @nomeSugerido, @confianca, @embedding, @decisao)
             """;
 
         foreach (var item in input.Itens)
@@ -80,6 +88,7 @@ public sealed class RevisaoPresencaRepository(IDbConnectionFactory connectionFac
                         pessoaSugeridaId = item.PessoaSugeridaId,
                         nomeSugerido = item.NomeSugerido,
                         confianca = item.Confianca,
+                        embedding = item.Embedding,
                         decisao = RevisaoDecisao.Pendente
                     },
                     transaction: transaction,
@@ -313,7 +322,11 @@ public sealed class RevisaoPresencaRepository(IDbConnectionFactory connectionFac
 
         const string sqlAprovados = """
             SELECT id,
-                   COALESCE(pessoa_final_id, pessoa_sugerida_id) AS PessoaId
+                   COALESCE(pessoa_final_id, pessoa_sugerida_id) AS PessoaId,
+                   pessoa_sugerida_id AS PessoaSugeridaId,
+                   pessoa_final_id AS PessoaFinalId,
+                   confianca AS Confianca,
+                   embedding AS Embedding
             FROM revisao_faces_itens
             WHERE revisao_id = @revisaoId
               AND tenant_id = @tenantId
@@ -361,6 +374,18 @@ public sealed class RevisaoPresencaRepository(IDbConnectionFactory connectionFac
             else
             {
                 duplicidadesIgnoradas++;
+            }
+
+            var deveAtualizarEmbedding =
+                aprovado.Embedding is not null &&
+                aprovado.Confianca is not null &&
+                aprovado.Confianca < LimiarAutoAceite &&
+                (aprovado.PessoaFinalId is null || aprovado.PessoaFinalId == aprovado.PessoaSugeridaId);
+
+            if (deveAtualizarEmbedding)
+            {
+                await AtualizarEmbeddingSupervisionadoAsync(
+                    connection, transaction, input.TenantId, aprovado.PessoaId, aprovado.Embedding!, input.RevisaoId, cancellationToken);
             }
         }
 
@@ -442,9 +467,68 @@ public sealed class RevisaoPresencaRepository(IDbConnectionFactory connectionFac
         public DateTime ExpiraEm { get; init; }
     }
 
+    private static async Task AtualizarEmbeddingSupervisionadoAsync(
+        Npgsql.NpgsqlConnection connection,
+        Npgsql.NpgsqlTransaction transaction,
+        int tenantId,
+        int pessoaId,
+        byte[] embeddingConfirmado,
+        int revisaoId,
+        CancellationToken cancellationToken)
+    {
+        var embeddingAtualBytes = await connection.QueryFirstOrDefaultAsync<byte[]?>(
+            new CommandDefinition(
+                "SELECT embedding FROM pessoas WHERE id = @pessoaId AND tenant_id = @tenantId",
+                new { pessoaId, tenantId },
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+
+        if (embeddingAtualBytes is null || embeddingAtualBytes.Length == 0)
+        {
+            return;
+        }
+
+        var embeddingAtual = EmbeddingHelper.FromBytes(embeddingAtualBytes);
+        var embeddingNovo = EmbeddingHelper.FromBytes(embeddingConfirmado);
+
+        if (embeddingAtual.Length != embeddingNovo.Length)
+        {
+            // Embeddings de dimensões diferentes (ex.: gerados por versões
+            // diferentes do modelo de reconhecimento) — não mistura, evita corromper.
+            return;
+        }
+
+        var embeddingBlend = new float[embeddingAtual.Length];
+        for (var i = 0; i < embeddingBlend.Length; i++)
+        {
+            embeddingBlend[i] = (PesoEmbeddingAtual * embeddingAtual[i]) + (PesoEmbeddingNovo * embeddingNovo[i]);
+        }
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                """
+                INSERT INTO pessoa_embeddings_historico (pessoa_id, embedding_anterior, revisao_id, motivo)
+                VALUES (@pessoaId, @embeddingAnterior, @revisaoId, 'revisao_confirmada')
+                """,
+                new { pessoaId, embeddingAnterior = embeddingAtualBytes, revisaoId },
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                "UPDATE pessoas SET embedding = @embedding WHERE id = @pessoaId",
+                new { embedding = EmbeddingHelper.ToBytes(embeddingBlend), pessoaId },
+                transaction: transaction,
+                cancellationToken: cancellationToken));
+    }
+
     private sealed class RevisaoItemAprovado
     {
         public int PessoaId { get; init; }
+        public int? PessoaSugeridaId { get; init; }
+        public int? PessoaFinalId { get; init; }
+        public float? Confianca { get; init; }
+        public byte[]? Embedding { get; init; }
     }
 }
 
@@ -465,6 +549,7 @@ public sealed class RevisaoCriacaoItemInput
     public int? PessoaSugeridaId { get; init; }
     public string? NomeSugerido { get; init; }
     public float? Confianca { get; init; }
+    public byte[]? Embedding { get; init; }
 }
 
 public sealed class RevisaoResumo

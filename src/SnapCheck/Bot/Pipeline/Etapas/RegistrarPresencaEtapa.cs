@@ -1,4 +1,5 @@
 using SnapCheck.Bot.Models;
+using SnapCheck.Data;
 using SnapCheck.Data.Repositories;
 
 namespace SnapCheck.Bot.Pipeline.Etapas;
@@ -7,6 +8,11 @@ public sealed class RegistrarPresencaEtapa(
     IPresencaRepository presencaRepository,
     IRevisaoPresencaRepository revisaoPresencaRepository) : IPipelineEtapa
 {
+    // Faixa "incerto" (ADR 0005, Decisão 1) — abaixo disso é desconhecido demais
+    // pra valer revisão (docs/requisitos/qualidade-biometrica.md). O teto (0.42)
+    // é o mesmo default de FaceService.CompararComCadastro.
+    private const float LimiarInferiorRevisao = 0.30f;
+
     public string Nome => "RegistrarPresenca";
 
     public async Task ExecutarAsync(PipelineContext context, CancellationToken cancellationToken = default)
@@ -18,7 +24,12 @@ public sealed class RegistrarPresencaEtapa(
             return;
         }
 
-        if (context.Matches.Count > 1)
+        var revisaoPorMultiplosRostos = context.Matches.Count > 1;
+        var revisaoPorBaixaConfianca = context.Matches.Count == 1 &&
+            !context.Matches[0].Reconhecido &&
+            context.Matches[0].Similaridade >= LimiarInferiorRevisao;
+
+        if (revisaoPorMultiplosRostos || revisaoPorBaixaConfianca)
         {
             var revisaoId = await revisaoPresencaRepository.CriarAsync(
                 new RevisaoCriacaoInput
@@ -34,7 +45,8 @@ public sealed class RegistrarPresencaEtapa(
                     {
                         PessoaSugeridaId = m.PessoaId,
                         NomeSugerido = m.Nome,
-                        Confianca = m.Similaridade
+                        Confianca = m.Similaridade,
+                        Embedding = m.Face.Embedding.Length > 0 ? EmbeddingHelper.ToBytes(m.Face.Embedding) : null
                     }).ToList()
                 },
                 cancellationToken);
