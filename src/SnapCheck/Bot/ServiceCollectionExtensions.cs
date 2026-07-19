@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPipelineEtapa, DownloadFotoEtapa>();
         services.AddSingleton<IPipelineEtapa, DetectarRostosEtapa>();
         services.AddSingleton<IPipelineEtapa, CompararRostosEtapa>();
+        services.AddSingleton<IPipelineEtapa, ValidarJanelaPresencaEtapa>();
         services.AddSingleton<IPipelineEtapa, RegistrarPresencaEtapa>();
         services.AddSingleton<IPipelineEtapa, AnotarImagemEtapa>();
         services.AddSingleton<IPipelineEtapa, EnviarRespostaEtapa>();

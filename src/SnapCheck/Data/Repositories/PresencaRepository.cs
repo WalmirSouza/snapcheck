@@ -9,6 +9,7 @@ public interface IPresencaRepository
         int tenantId,
         int pessoaId,
         string? turma,
+        string statusPresenca = "completa",
         CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(int tenantId, string nome, CancellationToken cancellationToken = default);
 
@@ -29,13 +30,13 @@ public enum RegistroPresencaResultado
 public sealed class PresencaRepository(IDbConnectionFactory connectionFactory) : IPresencaRepository
 {
     public async Task<RegistroPresencaResultado> RegistrarAsync(
-        int tenantId, int pessoaId, string? turma, CancellationToken cancellationToken = default)
+        int tenantId, int pessoaId, string? turma, string statusPresenca = "completa", CancellationToken cancellationToken = default)
     {
         var turmaNormalizada = (turma ?? string.Empty).Trim().ToLowerInvariant();
 
         const string sql = """
-            INSERT INTO presencas (tenant_id, pessoa_id, data_hora, turma, data_dia, turma_normalizada)
-            VALUES (@tenantId, @pessoaId, NOW(), @turma, CURRENT_DATE, @turmaNormalizada)
+            INSERT INTO presencas (tenant_id, pessoa_id, data_hora, turma, data_dia, turma_normalizada, status_presenca)
+            VALUES (@tenantId, @pessoaId, NOW(), @turma, CURRENT_DATE, @turmaNormalizada, @statusPresenca)
             ON CONFLICT (tenant_id, pessoa_id, turma_normalizada, data_dia) DO NOTHING
             RETURNING id
             """;
@@ -49,7 +50,8 @@ public sealed class PresencaRepository(IDbConnectionFactory connectionFactory) :
                     tenantId,
                     pessoaId,
                     turma,
-                    turmaNormalizada
+                    turmaNormalizada,
+                    statusPresenca
                 },
                 cancellationToken: cancellationToken));
 

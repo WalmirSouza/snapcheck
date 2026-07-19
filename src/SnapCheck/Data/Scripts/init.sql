@@ -93,13 +93,15 @@ CREATE TABLE IF NOT EXISTS presencas (
     data_hora TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     turma VARCHAR(200),
     data_dia DATE,
-    turma_normalizada VARCHAR(200)
+    turma_normalizada VARCHAR(200),
+    status_presenca VARCHAR(20) NOT NULL DEFAULT 'completa'
 );
 
 -- Backfill de instalações existentes: presença herda o tenant da própria pessoa.
 ALTER TABLE presencas ADD COLUMN IF NOT EXISTS tenant_id INTEGER;
 ALTER TABLE presencas ADD COLUMN IF NOT EXISTS data_dia DATE;
 ALTER TABLE presencas ADD COLUMN IF NOT EXISTS turma_normalizada VARCHAR(200);
+ALTER TABLE presencas ADD COLUMN IF NOT EXISTS status_presenca VARCHAR(20) NOT NULL DEFAULT 'completa';
 
 UPDATE presencas p
 SET tenant_id = pe.tenant_id

@@ -11,6 +11,13 @@ public sealed class RegistrarPresencaEtapa(
 
     public async Task ExecutarAsync(PipelineContext context, CancellationToken cancellationToken = default)
     {
+        if (context.StatusJanela is StatusJanelaPresenca.SemTurmaVinculada or StatusJanelaPresenca.ForaDaJanela)
+        {
+            // ValidarJanelaPresencaEtapa já preencheu context.MensagemJanela — não
+            // registra presença nem cria revisão, e não silencia (regra do item 02.1).
+            return;
+        }
+
         if (context.Matches.Count > 1)
         {
             var revisaoId = await revisaoPresencaRepository.CriarAsync(
@@ -47,10 +54,15 @@ public sealed class RegistrarPresencaEtapa(
                 continue;
             }
 
+            var statusPresenca = (context.StatusJanela ?? StatusJanelaPresenca.Completa)
+                .ToString()
+                .ToLowerInvariant();
+
             var resultado = await presencaRepository.RegistrarAsync(
                 context.Mensagem.TenantId,
                 pessoaId,
                 context.Mensagem.Turma,
+                statusPresenca,
                 cancellationToken);
 
             if (resultado == RegistroPresencaResultado.Registrada)

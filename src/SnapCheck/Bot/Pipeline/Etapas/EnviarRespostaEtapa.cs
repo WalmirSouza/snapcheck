@@ -17,6 +17,17 @@ public sealed class EnviarRespostaEtapa(
         var botClient = botClientProvider.Client
             ?? throw new InvalidOperationException("Bot do Telegram não está em execução.");
 
+        if (context.StatusJanela is StatusJanelaPresenca.SemTurmaVinculada or StatusJanelaPresenca.ForaDaJanela)
+        {
+            await BotManager.EnviarComMenuAsync(
+                botClient,
+                context.Mensagem.ChatId,
+                context.MensagemJanela ?? "Presença não registrada.",
+                cancellationToken);
+            activityLog.Info($"Foto rejeitada por janela ({context.StatusJanela}) no chat {context.Mensagem.ChatId}");
+            return;
+        }
+
         if (context.RegistroPorRevisao)
         {
             var totalFaces = context.Matches.Count;
@@ -61,7 +72,13 @@ public sealed class EnviarRespostaEtapa(
         var resumo = new List<string>();
         if (reconhecidos.Count > 0)
         {
-            resumo.Add($"✅ Presença registrada: {string.Join(", ", reconhecidos)}");
+            var rotuloStatus = context.StatusJanela switch
+            {
+                StatusJanelaPresenca.Atrasado => " (atrasado)",
+                StatusJanelaPresenca.Parcial => " (presença parcial)",
+                _ => string.Empty
+            };
+            resumo.Add($"✅ Presença registrada{rotuloStatus}: {string.Join(", ", reconhecidos)}");
         }
 
         if (desconhecidos > 0)

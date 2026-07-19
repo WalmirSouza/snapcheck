@@ -16,6 +16,15 @@ public sealed class MensagemProcessamento
     public bool NotificarDuplicidadeAoSolicitante { get; init; } = true;
 }
 
+public enum StatusJanelaPresenca
+{
+    SemTurmaVinculada,
+    ForaDaJanela,
+    Completa,
+    Atrasado,
+    Parcial
+}
+
 public sealed class PipelineContext
 {
     public MensagemProcessamento Mensagem { get; init; } = null!;
@@ -24,6 +33,8 @@ public sealed class PipelineContext
     public byte[]? ImagemAnotada { get; set; }
     public int? RevisaoPresencaId { get; set; }
     public bool RegistroPorRevisao { get; set; }
+    public StatusJanelaPresenca? StatusJanela { get; set; }
+    public string? MensagemJanela { get; set; }
     public List<string> PresencasRegistradas { get; } = [];
     public List<string> PresencasJaRegistradas { get; } = [];
     public List<string> Erros { get; } = [];

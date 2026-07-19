@@ -40,11 +40,11 @@
 ### 02.4 — Implementação do motor de regras configurável
 - Prioridade: Alta
 - Dificuldade: Alta
-- Status: Não iniciado — 0%
+- Status: Concluído — 100%
 - Skills recomendadas: [[dev-backend]]
 - Depende de: 02.2, 02.7
 - Critério de aceite: `RegistrarPresencaEtapa.cs` passa a consultar configuração por tenant (janela de aula, tolerância de atraso, presença parcial) em vez de regra fixa, mantendo compatibilidade com o fluxo atual quando a configuração não existir (default sensato).
-- Retomada: —
+- Retomada: Concluído em 2026-07-19. Nova etapa `ValidarJanelaPresencaEtapa` (`src/SnapCheck/Bot/Pipeline/Etapas/ValidarJanelaPresencaEtapa.cs`), registrada entre `CompararRostosEtapa` e `RegistrarPresencaEtapa` no DI, conforme decidido no ADR 0002. Consulta `ITurmaRepository.ObterTurmaIdPorChatAsync`/`ObterJanelasAtivasAsync` e calcula `StatusJanelaPresenca` (`SemTurmaVinculada`, `ForaDaJanela`, `Completa`, `Atrasado`, `Parcial`) comparando o horário atual com a janela vigente (dia ISO da semana + hora início/fim + tolerância + corte percentual). Turma vinculada sem nenhuma janela configurada = permite sem restrição (default sensato, conforme critério de aceite). `RegistrarPresencaEtapa` passa a checar esse status antes de tudo: `SemTurmaVinculada`/`ForaDaJanela` bloqueiam o registro (e não criam revisão em grupo mesmo com múltiplos matches) e `EnviarRespostaEtapa` explica o motivo em vez de silenciar (regra do item 02.1). Status calculado (completa/atrasado/parcial) é persistido em `presencas.status_presenca` (coluna nova, default `'completa'` para compatibilidade com linhas existentes e com o fluxo de revisão em grupo, que ainda não passa status). Validação: matemática de `CalcularStatus` testada com 6 casos de borda num script throwaway (início exato, dentro/fora da tolerância, exatamente no corte, logo após o corte, perto do fim) — todos passaram. Schema/migração validados no Postgres real do docker-compose (`status_presenca` aplicada com default, app subiu limpo). **Limitação honesta**: não validei o fluxo completo via uma foto real do Telegram (exigiria bot conectado a um chat real) — a cobertura ponta a ponta desse caminho específico fica para quando o módulo 10 (projeto de teste) existir.
 
 ---
 
