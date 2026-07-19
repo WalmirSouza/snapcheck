@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+  pull_request:
+    branches:
+      - main
+      - "release/**"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci_test
+          POSTGRES_PASSWORD: ci_test
+          POSTGRES_DB: snapcheck
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_test -d snapcheck"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restaurar dependências
+        run: dotnet restore SnapCheck.sln
+
+      - name: Build
+        run: dotnet build SnapCheck.sln --no-restore --configuration Release
+
+      - name: Testes
+        env:
+          SNAPCHECK_TEST_CONNECTION_STRING: "Host=localhost;Port=5432;Database=snapcheck;Username=ci_test;Password=ci_test"
+        run: dotnet test tests/SnapCheck.Tests/SnapCheck.Tests.csproj --no-build --configuration Release --logger "console;verbosity=normal"

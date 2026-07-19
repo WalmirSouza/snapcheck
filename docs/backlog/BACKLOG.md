@@ -29,7 +29,7 @@ SnapCheck é uma plataforma SaaS de gestão inteligente de presença por reconhe
 | 07 — Painel Gerencial e Relatórios | [modules/07-painel-gerencial.md](modules/07-painel-gerencial.md) | Média (60d) | Não iniciado — 0% |
 | 08 — Integrações | [modules/08-integracoes.md](modules/08-integracoes.md) | Média-Baixa (60-90d) | Não iniciado — 0% |
 | 09 — Aplicativo Móvel | [modules/09-app-mobile.md](modules/09-app-mobile.md) | Baixa (90d) | Não iniciado — 0% |
-| 10 — Qualidade, Testes e CI/CD | [modules/10-qualidade-cicd.md](modules/10-qualidade-cicd.md) | Alta (transversal) | Em andamento — 1/6 itens (17%), 10.3 parcial — falta decidir CI real (10.2) |
+| 10 — Qualidade, Testes e CI/CD | [modules/10-qualidade-cicd.md](modules/10-qualidade-cicd.md) | Alta (transversal) | Em andamento — 3/6 itens (50%) |
 
 ## Ordem recomendada de ataque
 

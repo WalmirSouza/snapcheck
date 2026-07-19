@@ -18,22 +18,22 @@
 ### 10.2 — ADR de pipeline CI/CD
 - Prioridade: Alta
 - Dificuldade: Média
-- Status: Não iniciado — 0%
+- Status: Concluído — 100% (escopo base; análise estática/segurança e deploy ficam para 10.4/10.5)
 - Skills recomendadas: [[devops-sre]], [[arquiteto-software]]
 - Depende de: 10.1
 - Critério de aceite: ADR definindo etapas do pipeline (build, testes, análise estática, segurança, deploy automático, rollback, versionamento) e a ferramenta de CI a usar.
-- Retomada: —
+- Retomada: Concluído em 2026-07-19 — `docs/adr/0003-pipeline-cicd.md`. GitHub Actions (repo já hospedado lá, suporte nativo a `services:` para Postgres efêmero no job, sem precisar de Testcontainers). Escopo do pipeline base: checkout → setup .NET 8 → restore → build → test (contra Postgres de serviço do job, credenciais efêmeras próprias, não as do `docker-compose` de dev). Análise estática/segurança (10.4) e deploy/rollback (10.5) ficam para depois, como etapas adicionais ao mesmo workflow. Branch protection (exigir o check antes de merge) é configuração do GitHub, não arquivo de código — não mexi nisso automaticamente.
 
 ---
 
 ### 10.3 — Implementar pipeline CI/CD base
 - Prioridade: Alta
 - Dificuldade: Média
-- Status: Em andamento — projeto de teste pronto e rodando localmente; falta o CI de verdade (workflow automatizado por PR)
+- Status: Concluído — 100% (falta análise estática/lint, que é o item 10.4)
 - Skills recomendadas: [[devops-sre]]
 - Depende de: 10.2
 - Critério de aceite: Pipeline executando build + testes + lint/análise estática automaticamente a cada PR, bloqueando merge se falhar.
-- Retomada: Parcial em 2026-07-19. Criado `tests/SnapCheck.Tests` (xUnit, referenciando `src/SnapCheck/SnapCheck.csproj`, adicionado à `SnapCheck.sln`). `dotnet build`/`dotnet test` funcionam localmente e passam (12/12). **Achado de infraestrutura, não de código**: a porta 5432 do host já está ocupada por um Postgres nativo do Windows, e 5433/5434 por outros projetos em docker-compose na mesma máquina — `docker-compose.yml` teve o mapeamento de porta do serviço `postgres` trocado de `5432:5432` para `5439:5432` (só a porta do host; a rede interna do compose continua em `postgres:5432`, sem impacto no app). Testes de integração assumem Postgres acessível em `localhost:5439` (`SNAPCHECK_TEST_CONNECTION_STRING` para sobrescrever). **Ainda falta**: nenhum workflow de CI real (GitHub Actions ou outro) rodando isso automaticamente por PR — isso exige confirmação explícita do usuário antes de criar (mexer em CI/CD é mudança de maior impacto, ver diretriz do item 10.1). Próximo passo: perguntar ao usuário se quer GitHub Actions agora (é o candidato óbvio, repo já está lá) antes de criar o workflow.
+- Retomada: Concluído em 2026-07-19. Criado `.github/workflows/ci.yml` (GitHub Actions, conforme ADR 0003): dispara em push/PR para `main` e `release/**`; sobe `postgres:16-alpine` como serviço do job (credenciais efêmeras `ci_test`); roda `dotnet restore` → `dotnet build --configuration Release` → `dotnet test` com `SNAPCHECK_TEST_CONNECTION_STRING` apontando pro serviço. Validei a sequência de comandos localmente em modo Release contra o Postgres do docker-compose (porta 5439) antes de considerar pronto — 12/12 passando, mesmo resultado que em Debug. **Ainda não verificado rodando de verdade no GitHub** (isso só acontece quando o commit for enviado ao repositório remoto — ainda não fiz push, aguardando decisão do usuário). Branch protection exigindo o check `build-and-test` antes de merge é configuração do GitHub (Settings → Branches), não faço isso automaticamente. Falta análise estática/lint (item 10.4) como próxima etapa deste mesmo workflow.
 
 ---
 
