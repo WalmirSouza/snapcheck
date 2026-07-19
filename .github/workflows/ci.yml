@@ -48,7 +48,7 @@ jobs:
         run: >
           dotnet build SnapCheck.sln --no-restore --configuration Release
           -p:EnableNETAnalyzers=true -p:AnalysisLevel=latest -p:TreatWarningsAsErrors=true
-          -p:WarningsNotAsErrors="NU1902;NU1903"
+          -p:WarningsNotAsErrors=NU1902%3BNU1903
 
       - name: Testes
         env:
