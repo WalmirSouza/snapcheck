@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IConfiguracaoRepository, ConfiguracaoRepository>();
         services.AddSingleton<IPessoaRepository, PessoaRepository>();
         services.AddSingleton<IPresencaRepository, PresencaRepository>();
+        services.AddSingleton<IRevisaoPresencaRepository, RevisaoPresencaRepository>();
         services.AddSingleton<ITenantRepository, TenantRepository>();
         services.AddSingleton<ITenantContext, TenantContext>();
 

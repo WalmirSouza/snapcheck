@@ -13,6 +13,7 @@ public sealed class MensagemProcessamento
     public int MessageId { get; init; }
     public string FileId { get; init; } = string.Empty;
     public string? Turma { get; init; }
+    public bool NotificarDuplicidadeAoSolicitante { get; init; } = true;
 }
 
 public sealed class PipelineContext
@@ -21,5 +22,9 @@ public sealed class PipelineContext
     public byte[]? ImagemBytes { get; set; }
     public IReadOnlyList<Face.Models.FaceMatch> Matches { get; set; } = [];
     public byte[]? ImagemAnotada { get; set; }
+    public int? RevisaoPresencaId { get; set; }
+    public bool RegistroPorRevisao { get; set; }
+    public List<string> PresencasRegistradas { get; } = [];
+    public List<string> PresencasJaRegistradas { get; } = [];
     public List<string> Erros { get; } = [];
 }

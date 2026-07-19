@@ -33,3 +33,53 @@ public sealed class OperacaoResponse
     public bool Sucesso { get; set; }
     public string Mensagem { get; set; } = string.Empty;
 }
+
+public sealed class CriarRevisaoPresencaRequest
+{
+    public int TenantId { get; set; }
+    public string? Turma { get; set; }
+    public long? ChatId { get; set; }
+    public string CriadoPor { get; set; } = string.Empty;
+    public string Origem { get; set; } = "telegram";
+    public string ReferenciaArquivo { get; set; } = string.Empty;
+    public List<CriarRevisaoPresencaItemRequest> Itens { get; set; } = [];
+}
+
+public sealed class CriarRevisaoPresencaItemRequest
+{
+    public int? PessoaSugeridaId { get; set; }
+    public string? NomeSugerido { get; set; }
+    public float? Confianca { get; set; }
+}
+
+public sealed class ConfirmarRevisaoPresencaRequest
+{
+    public int TenantId { get; set; }
+    public string ConfirmadoPor { get; set; } = string.Empty;
+    public string PerfilConfirmador { get; set; } = string.Empty;
+    public List<ConfirmarRevisaoPresencaItemRequest> Itens { get; set; } = [];
+}
+
+public sealed class ConfirmarRevisaoPresencaItemRequest
+{
+    public int ItemId { get; set; }
+    public string Decisao { get; set; } = string.Empty;
+    public int? PessoaFinalId { get; set; }
+    public string? Motivo { get; set; }
+}
+
+public sealed class CriarRevisaoPresencaResponse
+{
+    public int RevisaoId { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime ExpiraEm { get; set; }
+    public int TotalItens { get; set; }
+}
+
+public sealed class ConfirmarRevisaoPresencaResponse
+{
+    public bool Sucesso { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string Mensagem { get; set; } = string.Empty;
+    public int PresencasEfetivadas { get; set; }
+}

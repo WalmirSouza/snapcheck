@@ -17,7 +17,45 @@ public sealed class EnviarRespostaEtapa(
         var botClient = botClientProvider.Client
             ?? throw new InvalidOperationException("Bot do Telegram não está em execução.");
 
-        var reconhecidos = context.Matches.Where(m => m.Reconhecido).Select(m => m.Nome!).Distinct().ToList();
+        if (context.RegistroPorRevisao)
+        {
+            var totalFaces = context.Matches.Count;
+            var reconhecidosSugestao = context.Matches.Count(m => m.Reconhecido);
+            var resumoRevisao = new List<string>
+            {
+                $"📝 Revisão de presença criada (#{context.RevisaoPresencaId}).",
+                $"Faces detectadas: {totalFaces}. Sugestões automáticas: {reconhecidosSugestao}.",
+                "Confirme no painel web em até 24 horas."
+            };
+
+            if (context.Erros.Count > 0)
+            {
+                resumoRevisao.AddRange(context.Erros.Select(e => $"⚠️ {e}"));
+            }
+
+            await BotManager.EnviarComMenuAsync(
+                botClient,
+                context.Mensagem.ChatId,
+                string.Join("\n", resumoRevisao),
+                cancellationToken);
+
+            if (context.ImagemAnotada is not null)
+            {
+                using var stream = new MemoryStream(context.ImagemAnotada);
+                await botClient.SendPhoto(
+                    context.Mensagem.ChatId,
+                    InputFile.FromStream(stream, "revisao-presenca.jpg"),
+                    caption: "Foto enviada para revisão de presença",
+                    replyMarkup: BotKeyboard.MenuPrincipal,
+                    cancellationToken: cancellationToken);
+            }
+
+            activityLog.Info($"Revisão de presença #{context.RevisaoPresencaId} enviada ao chat {context.Mensagem.ChatId}");
+            return;
+        }
+
+        var reconhecidos = context.PresencasRegistradas.Distinct().ToList();
+        var duplicados = context.PresencasJaRegistradas.Distinct().ToList();
         var desconhecidos = context.Matches.Count(m => !m.Reconhecido);
 
         var resumo = new List<string>();
@@ -29,6 +67,11 @@ public sealed class EnviarRespostaEtapa(
         if (desconhecidos > 0)
         {
             resumo.Add($"⚠️ {desconhecidos} rosto(s) não reconhecido(s). Use o botão *Cadastrar Pessoa* para incluir.");
+        }
+
+        if (context.Mensagem.NotificarDuplicidadeAoSolicitante && duplicados.Count > 0)
+        {
+            resumo.Add($"ℹ️ Presença já registrada para: {string.Join(", ", duplicados)}");
         }
 
         if (context.Erros.Count > 0)

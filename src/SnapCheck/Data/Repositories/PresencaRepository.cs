@@ -5,7 +5,11 @@ namespace SnapCheck.Data.Repositories;
 
 public interface IPresencaRepository
 {
-    Task RegistrarAsync(int tenantId, int pessoaId, string? turma, CancellationToken cancellationToken = default);
+    Task<RegistroPresencaResultado> RegistrarAsync(
+        int tenantId,
+        int pessoaId,
+        string? turma,
+        CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(int tenantId, string nome, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -16,19 +20,42 @@ public interface IPresencaRepository
     Task<int> ContarHojeAsync(CancellationToken cancellationToken = default);
 }
 
+public enum RegistroPresencaResultado
+{
+    Registrada = 1,
+    Duplicada = 2
+}
+
 public sealed class PresencaRepository(IDbConnectionFactory connectionFactory) : IPresencaRepository
 {
-    public async Task RegistrarAsync(
+    public async Task<RegistroPresencaResultado> RegistrarAsync(
         int tenantId, int pessoaId, string? turma, CancellationToken cancellationToken = default)
     {
+        var turmaNormalizada = (turma ?? string.Empty).Trim().ToLowerInvariant();
+
         const string sql = """
-            INSERT INTO presencas (tenant_id, pessoa_id, data_hora, turma)
-            VALUES (@tenantId, @pessoaId, NOW(), @turma)
+            INSERT INTO presencas (tenant_id, pessoa_id, data_hora, turma, data_dia, turma_normalizada)
+            VALUES (@tenantId, @pessoaId, NOW(), @turma, CURRENT_DATE, @turmaNormalizada)
+            ON CONFLICT (tenant_id, pessoa_id, turma_normalizada, data_dia) DO NOTHING
+            RETURNING id
             """;
 
         await using var connection = (Npgsql.NpgsqlConnection)await connectionFactory.CreateConnectionAsync(cancellationToken);
-        await connection.ExecuteAsync(
-            new CommandDefinition(sql, new { tenantId, pessoaId, turma }, cancellationToken: cancellationToken));
+        var insertedId = await connection.ExecuteScalarAsync<int?>(
+            new CommandDefinition(
+                sql,
+                new
+                {
+                    tenantId,
+                    pessoaId,
+                    turma,
+                    turmaNormalizada
+                },
+                cancellationToken: cancellationToken));
+
+        return insertedId.HasValue
+            ? RegistroPresencaResultado.Registrada
+            : RegistroPresencaResultado.Duplicada;
     }
 
     public async Task<IReadOnlyList<Presenca>> ListarPorPessoaAsync(

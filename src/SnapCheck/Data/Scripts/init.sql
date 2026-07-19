@@ -54,11 +54,15 @@ CREATE TABLE IF NOT EXISTS presencas (
     id SERIAL PRIMARY KEY,
     pessoa_id INTEGER NOT NULL REFERENCES pessoas(id),
     data_hora TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    turma VARCHAR(200)
+    turma VARCHAR(200),
+    data_dia DATE,
+    turma_normalizada VARCHAR(200)
 );
 
 -- Backfill de instalações existentes: presença herda o tenant da própria pessoa.
 ALTER TABLE presencas ADD COLUMN IF NOT EXISTS tenant_id INTEGER;
+ALTER TABLE presencas ADD COLUMN IF NOT EXISTS data_dia DATE;
+ALTER TABLE presencas ADD COLUMN IF NOT EXISTS turma_normalizada VARCHAR(200);
 
 UPDATE presencas p
 SET tenant_id = pe.tenant_id
@@ -66,7 +70,17 @@ FROM pessoas pe
 WHERE p.pessoa_id = pe.id
   AND p.tenant_id IS NULL;
 
+UPDATE presencas
+SET data_dia = data_hora::date
+WHERE data_dia IS NULL;
+
+UPDATE presencas
+SET turma_normalizada = COALESCE(LOWER(TRIM(turma)), '')
+WHERE turma_normalizada IS NULL;
+
 ALTER TABLE presencas ALTER COLUMN tenant_id SET NOT NULL;
+ALTER TABLE presencas ALTER COLUMN data_dia SET NOT NULL;
+ALTER TABLE presencas ALTER COLUMN turma_normalizada SET NOT NULL;
 
 DO $$
 BEGIN
@@ -76,9 +90,87 @@ EXCEPTION
 END $$;
 
 DROP INDEX IF EXISTS idx_presencas_pessoa_data;
+DROP INDEX IF EXISTS idx_presencas_unq_tenant_pessoa_turma_dia;
 
 CREATE INDEX IF NOT EXISTS idx_presencas_tenant_pessoa_data
     ON presencas (tenant_id, pessoa_id, data_hora DESC);
+
+DELETE FROM presencas p
+USING presencas d
+WHERE p.id > d.id
+  AND p.tenant_id = d.tenant_id
+  AND p.pessoa_id = d.pessoa_id
+  AND p.turma_normalizada = d.turma_normalizada
+  AND p.data_dia = d.data_dia;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_presencas_unq_tenant_pessoa_turma_dia
+    ON presencas (tenant_id, pessoa_id, turma_normalizada, data_dia);
+
+CREATE TABLE IF NOT EXISTS revisoes_presenca_grupo (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+    turma VARCHAR(200),
+    chat_id BIGINT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pendente',
+    expira_em TIMESTAMPTZ NOT NULL,
+    criado_por VARCHAR(200) NOT NULL,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    confirmado_por VARCHAR(200),
+    confirmado_em TIMESTAMPTZ,
+    cancelado_por VARCHAR(200),
+    cancelado_em TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_revisoes_presenca_tenant_status
+    ON revisoes_presenca_grupo (tenant_id, status, criado_em DESC);
+
+CREATE TABLE IF NOT EXISTS revisao_faces_itens (
+    id SERIAL PRIMARY KEY,
+    revisao_id INTEGER NOT NULL REFERENCES revisoes_presenca_grupo(id) ON DELETE CASCADE,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+    pessoa_sugerida_id INTEGER REFERENCES pessoas(id),
+    nome_sugerido VARCHAR(200),
+    confianca REAL,
+    decisao VARCHAR(20) NOT NULL DEFAULT 'pendente',
+    pessoa_final_id INTEGER REFERENCES pessoas(id),
+    decidido_por VARCHAR(200),
+    decidido_em TIMESTAMPTZ,
+    motivo VARCHAR(300)
+);
+
+CREATE INDEX IF NOT EXISTS idx_revisao_faces_revisao
+    ON revisao_faces_itens (revisao_id, id);
+
+CREATE INDEX IF NOT EXISTS idx_revisao_faces_tenant
+    ON revisao_faces_itens (tenant_id, decisao);
+
+CREATE TABLE IF NOT EXISTS evidencias_foto_grupo (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+    revisao_id INTEGER NOT NULL REFERENCES revisoes_presenca_grupo(id) ON DELETE CASCADE,
+    origem VARCHAR(50) NOT NULL DEFAULT 'telegram',
+    referencia_arquivo VARCHAR(500) NOT NULL,
+    capturada_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expira_em TIMESTAMPTZ NOT NULL,
+    apagada_em TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_evidencias_foto_grupo_expira
+    ON evidencias_foto_grupo (expira_em)
+    WHERE apagada_em IS NULL;
+
+CREATE TABLE IF NOT EXISTS revisao_presenca_auditoria (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES tenants(id),
+    revisao_id INTEGER NOT NULL REFERENCES revisoes_presenca_grupo(id) ON DELETE CASCADE,
+    evento VARCHAR(50) NOT NULL,
+    detalhes TEXT,
+    ator VARCHAR(200),
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_revisao_auditoria_revisao
+    ON revisao_presenca_auditoria (revisao_id, criado_em DESC);
 
 -- configuracoes permanece global (infraestrutura do processo compartilhado:
 -- token único do bot, connection string única do banco) — ver ADR 0001,
